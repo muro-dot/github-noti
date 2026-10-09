@@ -36,7 +36,6 @@ enum class SortType(val displayName: String) {
  */
 data class MainUiState(
     val username: String = "",
-    val token: String = "",
     val monitorInterval: Long = 15L,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -90,7 +89,6 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
     private val _uiState = MutableStateFlow(
         MainUiState(
             username = preferenceManager.username,
-            token = preferenceManager.githubToken,
             monitorInterval = preferenceManager.monitorIntervalMinutes,
             isAutoUpdateCheckEnabled = preferenceManager.isAutoUpdateCheckEnabled
         )
@@ -128,7 +126,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val reposResult = apiClient.fetchUserRepositories(targetUser, _uiState.value.token.ifBlank { null })
+            val reposResult = apiClient.fetchUserRepositories(targetUser)
 
             reposResult.fold(
                 onSuccess = { fetchedRepos ->
@@ -155,10 +153,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     // 2단계: 각 리포지토리의 릴리즈를 병렬로 가져와 총 다운로드 수 및 증가 감지
                     val updatedItems = fetchedRepos.map { repo ->
                         async {
-                            val releasesResult = apiClient.fetchRepositoryReleases(
-                                repo.fullName,
-                                _uiState.value.token.ifBlank { null }
-                            )
+                            val releasesResult = apiClient.fetchRepositoryReleases(repo.fullName)
 
                             val releases = releasesResult.getOrDefault(emptyList())
                             val totalDownloads = releases.sumOf { release ->
@@ -333,8 +328,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update { it.copy(isCheckingAppUpdate = true, updateCheckMessage = null) }
 
             val result = apiClient.fetchLatestRelease(
-                repoFullName = "muro-dot/github-noti",
-                token = _uiState.value.token.ifBlank { null }
+                repoFullName = "muro-dot/github-noti"
             )
 
             result.fold(
@@ -385,20 +379,17 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
      */
     fun saveSettings(
         username: String,
-        token: String,
         intervalMinutes: Long,
         autoUpdateCheck: Boolean = true
     ) {
         val userChanged = preferenceManager.username != username
         preferenceManager.username = username
-        preferenceManager.githubToken = token
         preferenceManager.monitorIntervalMinutes = intervalMinutes
         preferenceManager.isAutoUpdateCheckEnabled = autoUpdateCheck
 
         _uiState.update {
             it.copy(
                 username = username,
-                token = token,
                 monitorInterval = intervalMinutes,
                 isAutoUpdateCheckEnabled = autoUpdateCheck,
                 isSettingsOpen = false

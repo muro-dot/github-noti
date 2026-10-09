@@ -11,8 +11,8 @@ android {
         applicationId = "com.antigravity.githubnoti"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.1.3"
+        versionCode = 6
+        versionName = "1.1.4"
     }
 
     buildTypes {
@@ -37,6 +37,52 @@ android {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
+    }
+}
+
+// 릴리즈/디버그 빌드 완료 후 지정된 형식(github-noti_v1.x.y.apk)으로 APK 복사 생성
+val currentVersion = android.defaultConfig.versionName ?: "1.1.4"
+
+abstract class CopyApkTask : DefaultTask() {
+    @get:InputDirectory
+    abstract val apkDir: DirectoryProperty
+
+    @get:Input
+    abstract val sourceFileName: Property<String>
+
+    @get:Input
+    abstract val targetFileName: Property<String>
+
+    @TaskAction
+    fun copyApk() {
+        val dir = apkDir.get().asFile
+        val src = File(dir, sourceFileName.get())
+        val target = File(dir, targetFileName.get())
+        if (src.exists()) {
+            src.copyTo(target, overwrite = true)
+            println(">> Generated: ${target.name} (${target.length()} bytes)")
+        }
+    }
+}
+
+val renameReleaseApk = tasks.register<CopyApkTask>("renameReleaseApk") {
+    apkDir.set(layout.buildDirectory.dir("outputs/apk/release"))
+    sourceFileName.set("app-release.apk")
+    targetFileName.set("github-noti_v${currentVersion}.apk")
+}
+
+val renameDebugApk = tasks.register<CopyApkTask>("renameDebugApk") {
+    apkDir.set(layout.buildDirectory.dir("outputs/apk/debug"))
+    sourceFileName.set("app-debug.apk")
+    targetFileName.set("github-noti_v${currentVersion}.apk")
+}
+
+afterEvaluate {
+    tasks.named("assembleRelease").configure {
+        finalizedBy(renameReleaseApk)
+    }
+    tasks.named("assembleDebug").configure {
+        finalizedBy(renameDebugApk)
     }
 }
 

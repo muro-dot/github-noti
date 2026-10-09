@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -20,22 +19,20 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import com.antigravity.githubnoti.BuildConfig
 
 /**
- * 깃허브 계정명, Personal Access Token, 백그라운드 모니터링 주기 및 앱 업데이트를 설정할 수 있는 다이얼로그입니다.
+ * 깃허브 계정명, 백그라운드 모니터링 주기 및 앱 업데이트를 설정할 수 있는 다이얼로그입니다.
  */
 @Composable
 fun SettingsDialog(
     currentUsername: String,
-    currentToken: String,
     currentInterval: Long,
     isAutoUpdateEnabled: Boolean = true,
     isCheckingUpdate: Boolean = false,
     updateStatusMessage: String? = null,
     onDismiss: () -> Unit,
     onCheckUpdateNow: () -> Unit = {},
-    onSave: (username: String, token: String, intervalMinutes: Long, autoUpdateCheck: Boolean) -> Unit
+    onSave: (username: String, intervalMinutes: Long, autoUpdateCheck: Boolean) -> Unit
 ) {
     var username by remember { mutableStateOf(currentUsername) }
-    var token by remember { mutableStateOf(currentToken) }
     var selectedInterval by remember { mutableLongStateOf(currentInterval) }
     var autoUpdateCheck by remember { mutableStateOf(isAutoUpdateEnabled) }
 
@@ -73,28 +70,9 @@ fun SettingsDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. Personal Access Token 입력 (선택)
-                OutlinedTextField(
-                    value = token,
-                    onValueChange = { token = it },
-                    label = { Text("GitHub Token (선택 사항)") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Key, contentDescription = null)
-                    },
-                    supportingText = {
-                        Text(
-                            text = "미입력 시 시간당 60회, 토큰 입력 시 시간당 5,000회까지 호출 가능합니다."
-                        )
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 3. 백그라운드 확인 주기 선택
+                // 2. 백그라운드 확인 주기 선택
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
@@ -222,7 +200,7 @@ fun SettingsDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    onSave(username.trim(), token.trim(), selectedInterval, autoUpdateCheck)
+                    onSave(username.trim(), selectedInterval, autoUpdateCheck)
                     onDismiss()
                 }
             ) {

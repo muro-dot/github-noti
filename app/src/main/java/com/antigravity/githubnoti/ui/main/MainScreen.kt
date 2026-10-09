@@ -285,15 +285,14 @@ fun MainScreen(
     if (uiState.isSettingsOpen) {
         SettingsDialog(
             currentUsername = uiState.username,
-            currentToken = uiState.token,
             currentInterval = uiState.monitorInterval,
             isAutoUpdateEnabled = uiState.isAutoUpdateCheckEnabled,
             isCheckingUpdate = uiState.isCheckingAppUpdate,
             updateStatusMessage = uiState.updateCheckMessage,
             onDismiss = { viewModel.closeSettings() },
             onCheckUpdateNow = { viewModel.checkAppUpdate(isManual = true) },
-            onSave = { user, tok, interval, autoUpdate ->
-                viewModel.saveSettings(user, tok, interval, autoUpdate)
+            onSave = { user, interval, autoUpdate ->
+                viewModel.saveSettings(user, interval, autoUpdate)
             }
         )
     }

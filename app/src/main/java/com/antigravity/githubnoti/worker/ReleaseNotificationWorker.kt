@@ -24,7 +24,6 @@ class ReleaseNotificationWorker(
 
     override suspend fun doWork(): Result {
         val trackedRepos = preferenceManager.trackedRepos
-        val token = preferenceManager.githubToken.ifBlank { null }
 
         // 추적할 리포지토리가 설정되어 있지 않으면 조용히 성공 처리
         if (trackedRepos.isEmpty()) {
@@ -34,7 +33,7 @@ class ReleaseNotificationWorker(
         var anyFailures = false
 
         for (repoFullName in trackedRepos) {
-            val releasesResult = apiClient.fetchRepositoryReleases(repoFullName, token)
+            val releasesResult = apiClient.fetchRepositoryReleases(repoFullName)
             releasesResult.fold(
                 onSuccess = { releases ->
                     // 1. 신규 릴리즈 감지
@@ -67,7 +66,7 @@ class ReleaseNotificationWorker(
 
         // 3. 앱 자체의 신규 릴리즈 업데이트 확인 (설정 활성화 시)
         if (preferenceManager.isAutoUpdateCheckEnabled) {
-            val appReleaseResult = apiClient.fetchLatestRelease("muro-dot/github-noti", token)
+            val appReleaseResult = apiClient.fetchLatestRelease("muro-dot/github-noti")
             appReleaseResult.getOrNull()?.let { appRelease ->
                 val currentVersion = com.antigravity.githubnoti.BuildConfig.VERSION_NAME
                 if (com.antigravity.githubnoti.util.VersionComparator.isNewer(currentVersion, appRelease.tagName)) {
