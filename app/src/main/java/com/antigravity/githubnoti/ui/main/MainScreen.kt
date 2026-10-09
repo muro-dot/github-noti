@@ -359,15 +359,16 @@ fun MainScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val targetUrl = updateInfo.downloadUrl ?: updateInfo.releasePageUrl
-                        if (!targetUrl.isNullOrBlank()) {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl))
-                            context.startActivity(intent)
-                        }
+                        com.antigravity.githubnoti.util.AppUpdateInstaller.startDownloadAndInstall(
+                            context = context,
+                            downloadUrl = updateInfo.downloadUrl,
+                            releasePageUrl = updateInfo.releasePageUrl,
+                            versionTag = updateInfo.latestVersion
+                        )
                         viewModel.dismissAppUpdateInfo()
                     }
                 ) {
-                    Text("지금 업데이트 (다운로드)")
+                    Text("지금 업데이트 (다운로드 후 자동 설치)")
                 }
             },
             dismissButton = {
