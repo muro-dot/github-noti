@@ -50,7 +50,10 @@ fun SettingsDialog(
         15L to stringResource(R.string.interval_15m),
         30L to stringResource(R.string.interval_30m),
         60L to stringResource(R.string.interval_1h),
-        180L to stringResource(R.string.interval_3h)
+        180L to stringResource(R.string.interval_3h),
+        360L to stringResource(R.string.interval_6h),
+        720L to stringResource(R.string.interval_12h),
+        1440L to stringResource(R.string.interval_24h)
     )
 
     val languageOptions = listOf(

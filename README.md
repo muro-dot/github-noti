@@ -26,7 +26,7 @@
 | 🌍 **Multi-language Support (i18n)** | Automatically displays in English if the device system language is not Korean. Includes in-app manual language switcher (System Default / 한국어 / English) in Settings. |
 | 📦 **Repository & Release Tracking** | Enter any GitHub user/organization to explore all public repositories with stars, forks, and cumulative download counters visualized on sleek Material 3 cards. |
 | 🔔 **Download Increase Alerts** | Detects incremental download count changes (.apk, .zip, etc.) against locally cached records and fires head-up push notifications (`🎉 [Repository] Download Increased!`). |
-| 🔄 **Periodic Background Sync** | Powered by AndroidX WorkManager, periodically checking repositories in the background (15m, 30m, 1h, 3h) while strictly adhering to Android battery optimization policies. |
+| 🔄 **Periodic Background Sync** | Powered by AndroidX WorkManager, periodically checking repositories in the background (15m, 30m, 1h, 3h, 6h, 12h, 24h) while strictly adhering to Android battery optimization policies. |
 | 🚀 **In-App Auto Update & Install** | Automatically verifies new releases of this app, initiates in-app background download via DownloadManager, and seamlessly launches the native package installer upon completion. |
 | 🧪 **Notification Test Simulation** | Built-in 'Download +1 Test' button for instant validation of notification channels, sounds, and head-up banner behavior. |
 | 🔍 **Search & Multi-criteria Sort** | Fast repository filtering with real-time search, sorted by downloads (desc), stars (desc), last updated, or alphabetical order. |

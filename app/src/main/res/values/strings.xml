@@ -36,6 +36,9 @@
     <string name="interval_30m">30 min</string>
     <string name="interval_1h">1 hour</string>
     <string name="interval_3h">3 hours</string>
+    <string name="interval_6h">6 hours</string>
+    <string name="interval_12h">12 hours</string>
+    <string name="interval_24h">24 hours (1 day)</string>
     <string name="settings_app_update_section">App Version (Current v%1$s)</string>
     <string name="settings_auto_update_label">Check for updates on launch</string>
     <string name="settings_btn_check_update">Check for Updates Now</string>

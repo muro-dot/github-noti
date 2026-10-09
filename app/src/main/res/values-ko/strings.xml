@@ -36,6 +36,9 @@
     <string name="interval_30m">30분</string>
     <string name="interval_1h">1시간</string>
     <string name="interval_3h">3시간</string>
+    <string name="interval_6h">6시간</string>
+    <string name="interval_12h">12시간</string>
+    <string name="interval_24h">24시간 (하루)</string>
     <string name="settings_app_update_section">앱 최신 버전 (현재 v%1$s)</string>
     <string name="settings_auto_update_label">시작 시 신규 버전 자동 확인</string>
     <string name="settings_btn_check_update">지금 최신 릴리즈 확인</string>
