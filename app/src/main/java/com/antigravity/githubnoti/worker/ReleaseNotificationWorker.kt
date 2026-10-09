@@ -37,7 +37,17 @@ class ReleaseNotificationWorker(
             val releasesResult = apiClient.fetchRepositoryReleases(repoFullName, token)
             releasesResult.fold(
                 onSuccess = { releases ->
-                    // 이전 기록과 비교하여 증가한 에셋 이벤트 감지
+                    // 1. 신규 릴리즈 감지
+                    val newReleaseEvent = preferenceManager.checkAndRecordNewReleases(
+                        repoFullName = repoFullName,
+                        releases = releases,
+                        isInitialLoad = false
+                    )
+                    if (newReleaseEvent != null) {
+                        notificationHelper.showNewReleaseNotification(newReleaseEvent)
+                    }
+
+                    // 2. 다운로드 증가 이벤트 감지
                     val increaseEvents = preferenceManager.checkAndRecordDownloadIncreases(
                         repoFullName = repoFullName,
                         releases = releases,
@@ -53,6 +63,26 @@ class ReleaseNotificationWorker(
                     anyFailures = true
                 }
             )
+        }
+
+        // 3. 앱 자체의 신규 릴리즈 업데이트 확인 (설정 활성화 시)
+        if (preferenceManager.isAutoUpdateCheckEnabled) {
+            val appReleaseResult = apiClient.fetchLatestRelease("muro-dot/github-noti", token)
+            appReleaseResult.getOrNull()?.let { appRelease ->
+                val currentVersion = com.antigravity.githubnoti.BuildConfig.VERSION_NAME
+                if (com.antigravity.githubnoti.util.VersionComparator.isNewer(currentVersion, appRelease.tagName)) {
+                    val apkAsset = appRelease.assets.firstOrNull { it.name.endsWith(".apk") }
+                    val updateInfo = com.antigravity.githubnoti.data.model.AppUpdateInfo(
+                        hasUpdate = true,
+                        latestVersion = appRelease.tagName,
+                        currentVersion = currentVersion,
+                        releaseNotes = appRelease.body,
+                        downloadUrl = apkAsset?.browserDownloadUrl,
+                        releasePageUrl = appRelease.htmlUrl
+                    )
+                    notificationHelper.showAppUpdateNotification(updateInfo)
+                }
+            }
         }
 
         return if (anyFailures) {

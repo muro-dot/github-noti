@@ -137,4 +137,52 @@ class GithubApiClient {
             Result.failure(e)
         }
     }
+
+    /**
+     * 특정 리포지토리의 최신 릴리즈(Latest Release) 1건을 가져옵니다.
+     * 자체 앱 업데이트 확인 또는 신규 버전 확인 시 빠르게 단일 조회를 수행합니다.
+     *
+     * @param repoFullName 리포지토리 전체 명칭 (예: "muro-dot/github-noti")
+     * @param token 개인 액세스 토큰 (선택 사항)
+     * @return 최신 [GithubRelease] 객체
+     */
+    suspend fun fetchLatestRelease(
+        repoFullName: String,
+        token: String? = null
+    ): Result<GithubRelease> = withContext(Dispatchers.IO) {
+        val cleanRepo = repoFullName.trim()
+        val url = "$BASE_URL/repos/$cleanRepo/releases/latest"
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .header("Accept", "application/vnd.github.v3+json")
+            .header("User-Agent", "GitHub-Noti-Android-App")
+
+        if (!token.isNullOrBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${token.trim()}")
+        }
+
+        try {
+            httpClient.newCall(requestBuilder.build()).execute().use { response ->
+                when (response.code) {
+                    200 -> {
+                        val body = response.body?.string() ?: ""
+                        val release: GithubRelease = jsonParser.decodeFromString(body)
+                        Result.success(release)
+                    }
+                    404 -> {
+                        Result.failure(NoSuchElementException("릴리즈가 등록되어 있지 않습니다."))
+                    }
+                    403 -> {
+                        Result.failure(IOException("API 호출 한도 초과: 최신 릴리즈 정보를 가져올 수 없습니다."))
+                    }
+                    else -> {
+                        Result.failure(IOException("최신 릴리즈 정보 요청 실패 (HTTP ${response.code})"))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+

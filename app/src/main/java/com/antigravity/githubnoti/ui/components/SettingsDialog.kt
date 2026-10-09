@@ -16,20 +16,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.material.icons.filled.SystemUpdate
+import com.antigravity.githubnoti.BuildConfig
+
 /**
- * 깃허브 계정명, Personal Access Token, 백그라운드 모니터링 주기를 설정할 수 있는 다이얼로그입니다.
+ * 깃허브 계정명, Personal Access Token, 백그라운드 모니터링 주기 및 앱 업데이트를 설정할 수 있는 다이얼로그입니다.
  */
 @Composable
 fun SettingsDialog(
     currentUsername: String,
     currentToken: String,
     currentInterval: Long,
+    isAutoUpdateEnabled: Boolean = true,
+    isCheckingUpdate: Boolean = false,
+    updateStatusMessage: String? = null,
     onDismiss: () -> Unit,
-    onSave: (username: String, token: String, intervalMinutes: Long) -> Unit
+    onCheckUpdateNow: () -> Unit = {},
+    onSave: (username: String, token: String, intervalMinutes: Long, autoUpdateCheck: Boolean) -> Unit
 ) {
     var username by remember { mutableStateOf(currentUsername) }
     var token by remember { mutableStateOf(currentToken) }
     var selectedInterval by remember { mutableLongStateOf(currentInterval) }
+    var autoUpdateCheck by remember { mutableStateOf(isAutoUpdateEnabled) }
 
     val intervalOptions = listOf(
         15L to "15분 (권장 최소값)",
@@ -118,7 +126,73 @@ fun SettingsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 4. 앱 자체 최신 릴리즈 자동 업데이트 확인 설정
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SystemUpdate,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "앱 최신 버전 (현재 v${BuildConfig.VERSION_NAME})",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "시작 시 신규 버전 자동 확인",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Switch(
+                        checked = autoUpdateCheck,
+                        onCheckedChange = { autoUpdateCheck = it }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                OutlinedButton(
+                    onClick = onCheckUpdateNow,
+                    enabled = !isCheckingUpdate,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isCheckingUpdate) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("최신 릴리즈 확인 중...")
+                    } else {
+                        Text("지금 최신 릴리즈 확인")
+                    }
+                }
+
+                if (!updateStatusMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = updateStatusMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -148,7 +222,7 @@ fun SettingsDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    onSave(username.trim(), token.trim(), selectedInterval)
+                    onSave(username.trim(), token.trim(), selectedInterval, autoUpdateCheck)
                     onDismiss()
                 }
             ) {

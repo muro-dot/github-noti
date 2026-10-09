@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.antigravity.githubnoti.data.model.DownloadIncreaseEvent
 import com.antigravity.githubnoti.data.model.GithubRelease
+import com.antigravity.githubnoti.data.model.NewReleaseEvent
 
 /**
  * 사용자 설정 및 리포지토리 릴리즈 다운로드 수를 로컬에 안전하게 영속 저장하는 매니저 클래스입니다.
@@ -22,7 +23,9 @@ class PreferenceManager(context: Context) {
         private const val KEY_TOKEN = "github_token"
         private const val KEY_TRACKED_REPOS = "tracked_repos"
         private const val KEY_MONITOR_INTERVAL_MINUTES = "monitor_interval_minutes"
+        private const val KEY_AUTO_UPDATE_CHECK = "auto_update_check"
         private const val PREFIX_DOWNLOAD_COUNT = "asset_dl_"
+        private const val PREFIX_LATEST_RELEASE_ID = "latest_rel_id_"
     }
 
     /**
@@ -53,6 +56,13 @@ class PreferenceManager(context: Context) {
     var trackedRepos: Set<String>
         get() = prefs.getStringSet(KEY_TRACKED_REPOS, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_TRACKED_REPOS, value).apply()
+
+    /**
+     * 앱 시작 시 및 백그라운드에서 신규 릴리즈 업데이트 자동 확인 활성화 여부 (기본값: true)
+     */
+    var isAutoUpdateCheckEnabled: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_UPDATE_CHECK, true)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_UPDATE_CHECK, value).apply()
 
     /**
      * 특정 리포지토리의 추적 여부를 토글합니다.
@@ -128,6 +138,45 @@ class PreferenceManager(context: Context) {
 
         editor.apply()
         return events
+    }
+
+    /**
+     * 리포지토리의 최신 릴리즈가 이전 확인 시점보다 새로 발행되었는지 확인합니다.
+     *
+     * @param repoFullName 리포지토리 전체 명칭
+     * @param releases 해당 리포지토리의 릴리즈 목록
+     * @param isInitialLoad 최초 조회 여부
+     * @return 새로 발행된 릴리즈 이벤트 (새 릴리즈가 없으면 null)
+     */
+    fun checkAndRecordNewReleases(
+        repoFullName: String,
+        releases: List<GithubRelease>,
+        isInitialLoad: Boolean = false
+    ): NewReleaseEvent? {
+        val latestRelease = releases.firstOrNull() ?: return null
+        val key = "$PREFIX_LATEST_RELEASE_ID$repoFullName"
+        val prevReleaseId = prefs.getLong(key, -1L)
+
+        return if (prevReleaseId == -1L) {
+            // 최초 기록: 현재 최신 릴리즈 ID만 저장하고 알림은 생략
+            prefs.edit().putLong(key, latestRelease.id).apply()
+            null
+        } else if (latestRelease.id != prevReleaseId) {
+            // 새 릴리즈 ID가 감지됨!
+            prefs.edit().putLong(key, latestRelease.id).apply()
+            if (!isInitialLoad) {
+                NewReleaseEvent(
+                    repoFullName = repoFullName,
+                    releaseTagName = latestRelease.tagName,
+                    releaseName = latestRelease.name ?: latestRelease.tagName,
+                    releaseUrl = latestRelease.htmlUrl
+                )
+            } else {
+                null
+            }
+        } else {
+            null
+        }
     }
 
     /**

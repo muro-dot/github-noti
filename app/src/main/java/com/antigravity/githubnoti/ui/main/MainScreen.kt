@@ -1,5 +1,7 @@
 package com.antigravity.githubnoti.ui.main
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -48,6 +50,20 @@ fun MainScreen(
             )
             if (result == SnackbarResult.ActionPerformed || result == SnackbarResult.Dismissed) {
                 viewModel.dismissRecentEvent()
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.recentNewReleaseEvent) {
+        uiState.recentNewReleaseEvent?.let { event ->
+            val message = "🚀 [${event.repoFullName}] 신규 릴리즈 '${event.releaseTagName}' (${event.releaseName}) 출시!"
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "확인",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed || result == SnackbarResult.Dismissed) {
+                viewModel.dismissRecentNewReleaseEvent()
             }
         }
     }
@@ -263,15 +279,101 @@ fun MainScreen(
         }
     }
 
+    val context = LocalContext.current
+
     // 설정 대화상자
     if (uiState.isSettingsOpen) {
         SettingsDialog(
             currentUsername = uiState.username,
             currentToken = uiState.token,
             currentInterval = uiState.monitorInterval,
+            isAutoUpdateEnabled = uiState.isAutoUpdateCheckEnabled,
+            isCheckingUpdate = uiState.isCheckingAppUpdate,
+            updateStatusMessage = uiState.updateCheckMessage,
             onDismiss = { viewModel.closeSettings() },
-            onSave = { user, tok, interval ->
-                viewModel.saveSettings(user, tok, interval)
+            onCheckUpdateNow = { viewModel.checkAppUpdate(isManual = true) },
+            onSave = { user, tok, interval, autoUpdate ->
+                viewModel.saveSettings(user, tok, interval, autoUpdate)
+            }
+        )
+    }
+
+    // 앱 자체 신규 릴리즈 업데이트 알림 대화상자
+    uiState.appUpdateInfo?.let { updateInfo ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissAppUpdateInfo() },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.SystemUpdate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "새로운 업데이트 알림",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "GitHub Noti의 새로운 버전(${updateInfo.latestVersion})이 배포되었습니다!",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "현재 버전: v${updateInfo.currentVersion} ➔ 최신 버전: ${updateInfo.latestVersion}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    if (!updateInfo.releaseNotes.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "릴리즈 변경 사항:",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 160.dp)
+                        ) {
+                            Text(
+                                text = updateInfo.releaseNotes,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetUrl = updateInfo.downloadUrl ?: updateInfo.releasePageUrl
+                        if (!targetUrl.isNullOrBlank()) {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl))
+                            context.startActivity(intent)
+                        }
+                        viewModel.dismissAppUpdateInfo()
+                    }
+                ) {
+                    Text("지금 업데이트 (다운로드)")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissAppUpdateInfo() }) {
+                    Text("나중에 하기")
+                }
             }
         )
     }

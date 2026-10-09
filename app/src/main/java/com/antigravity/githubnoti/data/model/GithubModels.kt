@@ -59,6 +59,7 @@ data class GithubRelease(
     val htmlUrl: String,
     @SerialName("published_at")
     val publishedAt: String? = null,
+    val body: String? = null,
     val assets: List<GithubAsset> = emptyList()
 )
 
@@ -115,3 +116,26 @@ data class DownloadIncreaseEvent(
 ) {
     val increaseAmount: Long get() = newCount - previousCount
 }
+
+/**
+ * 신규 릴리즈가 등록되었을 때 전달되는 이벤트 데이터입니다.
+ */
+data class NewReleaseEvent(
+    val repoFullName: String,
+    val releaseTagName: String,
+    val releaseName: String,
+    val releaseUrl: String
+)
+
+/**
+ * 앱 자체의 업데이트 확인 정보 모델입니다.
+ */
+data class AppUpdateInfo(
+    val hasUpdate: Boolean,
+    val latestVersion: String,
+    val currentVersion: String,
+    val releaseNotes: String? = null,
+    val downloadUrl: String? = null,
+    val releasePageUrl: String? = null
+)
+

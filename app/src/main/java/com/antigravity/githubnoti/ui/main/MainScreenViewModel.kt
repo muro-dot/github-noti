@@ -3,11 +3,15 @@ package com.antigravity.githubnoti.ui.main
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.antigravity.githubnoti.BuildConfig
 import com.antigravity.githubnoti.data.api.GithubApiClient
 import com.antigravity.githubnoti.data.local.PreferenceManager
+import com.antigravity.githubnoti.data.model.AppUpdateInfo
 import com.antigravity.githubnoti.data.model.DownloadIncreaseEvent
+import com.antigravity.githubnoti.data.model.NewReleaseEvent
 import com.antigravity.githubnoti.data.model.RepoItemUiState
 import com.antigravity.githubnoti.notification.NotificationHelper
+import com.antigravity.githubnoti.util.VersionComparator
 import com.antigravity.githubnoti.worker.WorkScheduler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -40,7 +44,12 @@ data class MainUiState(
     val sortType: SortType = SortType.DOWNLOAD_DESC,
     val repos: List<RepoItemUiState> = emptyList(),
     val isSettingsOpen: Boolean = false,
-    val recentIncreaseEvent: DownloadIncreaseEvent? = null
+    val recentIncreaseEvent: DownloadIncreaseEvent? = null,
+    val recentNewReleaseEvent: NewReleaseEvent? = null,
+    val appUpdateInfo: AppUpdateInfo? = null,
+    val isCheckingAppUpdate: Boolean = false,
+    val updateCheckMessage: String? = null,
+    val isAutoUpdateCheckEnabled: Boolean = true
 ) {
     /**
      * 검색어 및 선택된 정렬 기준에 따라 필터링/정렬된 리포지토리 리스트
@@ -82,7 +91,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         MainUiState(
             username = preferenceManager.username,
             token = preferenceManager.githubToken,
-            monitorInterval = preferenceManager.monitorIntervalMinutes
+            monitorInterval = preferenceManager.monitorIntervalMinutes,
+            isAutoUpdateCheckEnabled = preferenceManager.isAutoUpdateCheckEnabled
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -97,6 +107,11 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         // 저장된 사용자명이 있다면 자동으로 리포지토리 목록 조회 시작
         if (preferenceManager.username.isNotBlank()) {
             fetchRepositories(preferenceManager.username)
+        }
+
+        // 앱 자체 신규 릴리즈 업데이트 자동 확인 (설정 활성화 시)
+        if (preferenceManager.isAutoUpdateCheckEnabled) {
+            checkAppUpdate(isManual = false)
         }
     }
 
@@ -150,7 +165,20 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                                 release.assets.sumOf { it.downloadCount }
                             }
 
-                            // 다운로드 수 증가 비교 및 기록
+                            // 1. 신규 릴리즈 출시 감지
+                            val newReleaseEvent = preferenceManager.checkAndRecordNewReleases(
+                                repoFullName = repo.fullName,
+                                releases = releases,
+                                isInitialLoad = false
+                            )
+
+                            val isTracked = repo.fullName in preferenceManager.trackedRepos
+                            if (isTracked && newReleaseEvent != null) {
+                                notificationHelper.showNewReleaseNotification(newReleaseEvent)
+                                _uiState.update { state -> state.copy(recentNewReleaseEvent = newReleaseEvent) }
+                            }
+
+                            // 2. 다운로드 수 증가 비교 및 기록
                             val increaseEvents = preferenceManager.checkAndRecordDownloadIncreases(
                                 repoFullName = repo.fullName,
                                 releases = releases,
@@ -158,7 +186,6 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                             )
 
                             // 증가가 발생했고 추적 중인 리포지토리라면 푸시 알림 발송!
-                            val isTracked = repo.fullName in preferenceManager.trackedRepos
                             if (isTracked && increaseEvents.isNotEmpty()) {
                                 for (event in increaseEvents) {
                                     notificationHelper.showDownloadIncreaseNotification(event)
@@ -284,20 +311,96 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(recentIncreaseEvent = null) }
     }
 
+    fun dismissRecentNewReleaseEvent() {
+        _uiState.update { it.copy(recentNewReleaseEvent = null) }
+    }
+
+    fun dismissAppUpdateInfo() {
+        _uiState.update { it.copy(appUpdateInfo = null) }
+    }
+
+    fun dismissUpdateCheckMessage() {
+        _uiState.update { it.copy(updateCheckMessage = null) }
+    }
+
+    /**
+     * GitHub Noti 앱 자체의 최신 릴리즈를 확인하여 업데이트가 있는지 점검합니다.
+     *
+     * @param isManual 사용자가 설정 화면 등에서 수동으로 '업데이트 확인' 버튼을 눌렀는지 여부
+     */
+    fun checkAppUpdate(isManual: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingAppUpdate = true, updateCheckMessage = null) }
+
+            val result = apiClient.fetchLatestRelease(
+                repoFullName = "muro-dot/github-noti",
+                token = _uiState.value.token.ifBlank { null }
+            )
+
+            result.fold(
+                onSuccess = { release ->
+                    val currentVersion = BuildConfig.VERSION_NAME
+                    val hasNewer = VersionComparator.isNewer(currentVersion, release.tagName)
+
+                    if (hasNewer) {
+                        val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
+                        val updateInfo = AppUpdateInfo(
+                            hasUpdate = true,
+                            latestVersion = release.tagName,
+                            currentVersion = currentVersion,
+                            releaseNotes = release.body,
+                            downloadUrl = apkAsset?.browserDownloadUrl,
+                            releasePageUrl = release.htmlUrl
+                        )
+                        _uiState.update {
+                            it.copy(
+                                appUpdateInfo = updateInfo,
+                                isCheckingAppUpdate = false,
+                                updateCheckMessage = if (isManual) "새 버전(${release.tagName})이 출시되었습니다!" else null
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isCheckingAppUpdate = false,
+                                updateCheckMessage = if (isManual) "현재 최신 버전(v$currentVersion)을 사용 중입니다." else null
+                            )
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isCheckingAppUpdate = false,
+                            updateCheckMessage = if (isManual) "업데이트 확인 실패: ${error.localizedMessage ?: "네트워크 오류"}" else null
+                        )
+                    }
+                }
+            )
+        }
+    }
+
     /**
      * 사용자 설정 저장 및 스케줄러 갱신
      */
-    fun saveSettings(username: String, token: String, intervalMinutes: Long) {
+    fun saveSettings(
+        username: String,
+        token: String,
+        intervalMinutes: Long,
+        autoUpdateCheck: Boolean = true
+    ) {
         val userChanged = preferenceManager.username != username
         preferenceManager.username = username
         preferenceManager.githubToken = token
         preferenceManager.monitorIntervalMinutes = intervalMinutes
+        preferenceManager.isAutoUpdateCheckEnabled = autoUpdateCheck
 
         _uiState.update {
             it.copy(
                 username = username,
                 token = token,
                 monitorInterval = intervalMinutes,
+                isAutoUpdateCheckEnabled = autoUpdateCheck,
                 isSettingsOpen = false
             )
         }
