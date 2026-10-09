@@ -38,10 +38,9 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 다운로드 증가 이벤트 발생 시 인앱 스낵바 표시
     LaunchedEffect(uiState.recentIncreaseEvent) {
         uiState.recentIncreaseEvent?.let { event ->
-            val message = "🎉 [${event.repoFullName}] '${event.assetName}' 다운로드 수가 ${event.newCount}회로 증가했습니다!"
+            val message = "🎉 [${event.repoFullName}] '${event.assetName}' 다운로드 +${event.increaseAmount}회! (${event.previousCount}회 ➔ ${event.newCount}회)"
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = "확인",
