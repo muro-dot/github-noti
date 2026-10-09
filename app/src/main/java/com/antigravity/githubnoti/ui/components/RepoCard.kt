@@ -94,19 +94,7 @@ fun RepoCard(
                 }
             }
 
-            // 리포지토리 설명
-            if (!item.repo.description.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = item.repo.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 주요 메트릭 뱃지 (스타 수, 포크 수, 총 다운로드 수, 주요 언어)
             Row(
