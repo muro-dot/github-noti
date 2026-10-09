@@ -11,6 +11,10 @@
   <img src="https://img.shields.io/badge/License-GPL--3.0-orange" alt="License">
 </p>
 
+<p align="center">
+  <img src="docs/screenshot.jpg" alt="GitHub Release Notifier Screenshot" width="320" style="border-radius: 16px;">
+</p>
+
 ---
 
 ## 📖 Overview
