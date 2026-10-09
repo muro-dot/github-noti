@@ -191,10 +191,9 @@ fun RepoCard(
                 ) {
                     Switch(
                         checked = item.isTracked,
-                        onCheckedChange = onToggleTrack,
-                        modifier = Modifier.size(40.dp)
+                        onCheckedChange = onToggleTrack
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Text(
                         text = if (item.isTracked) stringResource(R.string.tracking_on) else stringResource(R.string.tracking_off),
                         style = MaterialTheme.typography.labelMedium,

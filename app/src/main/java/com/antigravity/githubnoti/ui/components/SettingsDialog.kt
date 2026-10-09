@@ -22,8 +22,10 @@ import com.antigravity.githubnoti.R
 import com.antigravity.githubnoti.util.LocaleHelper
 
 /**
- * 깃허브 계정명, 백그라운드 모니터링 주기, 앱 업데이트 및 앱 언어(다국어)를 설정할 수 있는 다이얼로그입니다.
+ * 깃허브 계정명, 백그라운드 모니터링 주기, 언어 및 앱 업데이트를 설정할 수 있는 다이얼로그입니다.
+ * 줄간격을 컴팩트하게 줄이고 확인 주기 및 언어를 드롭다운 메뉴로 선택할 수 있도록 구성되었습니다.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDialog(
     currentUsername: String,
@@ -40,6 +42,9 @@ fun SettingsDialog(
     var selectedInterval by remember { mutableLongStateOf(currentInterval) }
     var selectedLanguage by remember { mutableStateOf(currentLanguage) }
     var autoUpdateCheck by remember { mutableStateOf(isAutoUpdateEnabled) }
+
+    var intervalExpanded by remember { mutableStateOf(false) }
+    var languageExpanded by remember { mutableStateOf(false) }
 
     val intervalOptions = listOf(
         15L to stringResource(R.string.interval_15m),
@@ -81,77 +86,93 @@ fun SettingsDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // 2. 백그라운드 확인 주기 선택
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                // 2. 백그라운드 확인 주기 선택 (드롭다운)
+                ExposedDropdownMenuBox(
+                    expanded = intervalExpanded,
+                    onExpandedChange = { intervalExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = intervalOptions.firstOrNull { it.first == selectedInterval }?.second ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.settings_interval_section)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = intervalExpanded) },
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.settings_interval_section),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                intervalOptions.forEach { (interval, label) ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                    ExposedDropdownMenu(
+                        expanded = intervalExpanded,
+                        onDismissRequest = { intervalExpanded = false }
                     ) {
-                        RadioButton(
-                            selected = selectedInterval == interval,
-                            onClick = { selectedInterval = interval }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+                        intervalOptions.forEach { (interval, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+                                onClick = {
+                                    selectedInterval = interval
+                                    intervalExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // 3. 언어 설정 (다국어 수동 전환)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                // 3. 언어 설정 (드롭다운)
+                ExposedDropdownMenuBox(
+                    expanded = languageExpanded,
+                    onExpandedChange = { languageExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = languageOptions.firstOrNull { it.first == selectedLanguage }?.second ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.settings_language_section)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.settings_language_section),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                languageOptions.forEach { (code, label) ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                    ExposedDropdownMenu(
+                        expanded = languageExpanded,
+                        onDismissRequest = { languageExpanded = false }
                     ) {
-                        RadioButton(
-                            selected = selectedLanguage == code,
-                            onClick = { selectedLanguage = code }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+                        languageOptions.forEach { (code, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label, style = MaterialTheme.typography.bodyMedium) },
+                                onClick = {
+                                    selectedLanguage = code
+                                    languageExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // 4. 앱 자체 최신 릴리즈 자동 업데이트 확인 설정
+                // 4. 앱 최신 릴리즈 자동 업데이트 확인 설정
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -159,7 +180,7 @@ fun SettingsDialog(
                     Icon(
                         imageVector = Icons.Default.SystemUpdate,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -170,7 +191,7 @@ fun SettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -187,7 +208,7 @@ fun SettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 OutlinedButton(
                     onClick = onCheckUpdateNow,
@@ -207,7 +228,7 @@ fun SettingsDialog(
                 }
 
                 if (!updateStatusMessage.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = updateStatusMessage,
                         style = MaterialTheme.typography.bodySmall,
@@ -215,7 +236,7 @@ fun SettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -223,16 +244,16 @@ fun SettingsDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(10.dp),
+                        modifier = Modifier.padding(8.dp),
                         verticalAlignment = Alignment.Top
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.settings_battery_notice),
                             style = MaterialTheme.typography.bodySmall,
