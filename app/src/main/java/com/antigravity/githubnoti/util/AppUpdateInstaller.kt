@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.antigravity.githubnoti.R
 import java.io.File
 
 /**
@@ -58,13 +59,13 @@ object AppUpdateInstaller {
 
         val downloadManager = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
         if (downloadManager == null) {
-            Toast.makeText(appContext, "다운로드 관리자를 실행할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(appContext, appContext.getString(R.string.installer_download_manager_error), Toast.LENGTH_SHORT).show()
             return
         }
 
         val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
-            setTitle("GitHub Noti $versionTag 업데이트 다운로드")
-            setDescription("다운로드 완료 후 설치가 자동으로 진행됩니다.")
+            setTitle(appContext.getString(R.string.installer_download_title, versionTag))
+            setDescription(appContext.getString(R.string.installer_download_desc))
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setDestinationUri(Uri.fromFile(destinationFile))
             setMimeType("application/vnd.android.package-archive")
@@ -74,7 +75,7 @@ object AppUpdateInstaller {
 
         Toast.makeText(
             appContext,
-            "최신 버전 다운로드를 시작합니다. 완료되면 설치 화면이 자동으로 열립니다.",
+            appContext.getString(R.string.installer_download_started),
             Toast.LENGTH_LONG
         ).show()
 
@@ -107,7 +108,7 @@ object AppUpdateInstaller {
      */
     fun installApk(context: Context, apkFile: File) {
         if (!apkFile.exists()) {
-            Toast.makeText(context, "설치할 APK 파일을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.installer_apk_not_found), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -116,7 +117,7 @@ object AppUpdateInstaller {
             if (!context.packageManager.canRequestPackageInstalls()) {
                 Toast.makeText(
                     context,
-                    "앱 업데이트 설치를 위해 '알 수 없는 앱 설치' 권한을 허용해주세요.",
+                    context.getString(R.string.installer_unknown_source_permission),
                     Toast.LENGTH_LONG
                 ).show()
 
@@ -147,7 +148,7 @@ object AppUpdateInstaller {
             e.printStackTrace()
             Toast.makeText(
                 context,
-                "설치 관리자를 실행하는 중 오류가 발생했습니다: ${e.localizedMessage}",
+                context.getString(R.string.installer_launch_error, e.localizedMessage ?: ""),
                 Toast.LENGTH_SHORT
             ).show()
         }

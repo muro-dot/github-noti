@@ -24,16 +24,8 @@ class NotificationHelper(private val context: Context) {
 
     companion object {
         const val CHANNEL_ID = "github_release_download_channel"
-        private const val CHANNEL_NAME = "GitHub 릴리즈 다운로드 알림"
-        private const val CHANNEL_DESCRIPTION = "추적 중인 리포지토리의 릴리즈 다운로드 수가 증가했을 때 알림을 보냅니다."
-
         const val CHANNEL_ID_NEW_RELEASE = "github_new_release_channel"
-        private const val CHANNEL_NAME_NEW_RELEASE = "GitHub 신규 릴리즈 알림"
-        private const val CHANNEL_DESCRIPTION_NEW_RELEASE = "추적 중인 리포지토리에 새로운 릴리즈가 출시되었을 때 알림을 보냅니다."
-
         const val CHANNEL_ID_APP_UPDATE = "github_noti_app_update_channel"
-        private const val CHANNEL_NAME_APP_UPDATE = "GitHub Noti 앱 업데이트 알림"
-        private const val CHANNEL_DESCRIPTION_APP_UPDATE = "GitHub Noti 앱의 최신 버전 업데이트를 안내합니다."
     }
 
     init {
@@ -49,28 +41,28 @@ class NotificationHelper(private val context: Context) {
 
             val downloadChannel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                context.getString(R.string.channel_name_download),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION
+                description = context.getString(R.string.channel_desc_download)
                 enableVibration(true)
             }
 
             val releaseChannel = NotificationChannel(
                 CHANNEL_ID_NEW_RELEASE,
-                CHANNEL_NAME_NEW_RELEASE,
+                context.getString(R.string.channel_name_new_release),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION_NEW_RELEASE
+                description = context.getString(R.string.channel_desc_new_release)
                 enableVibration(true)
             }
 
             val updateChannel = NotificationChannel(
                 CHANNEL_ID_APP_UPDATE,
-                CHANNEL_NAME_APP_UPDATE,
+                context.getString(R.string.channel_name_app_update),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = CHANNEL_DESCRIPTION_APP_UPDATE
+                description = context.getString(R.string.channel_desc_app_update)
             }
 
             manager.createNotificationChannel(downloadChannel)
@@ -98,14 +90,25 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = "🎉 [${event.repoFullName}] 신규 다운로드 감지!"
-        val message = "'${event.assetName}'\n" +
-                "다운로드 수: ${event.previousCount}회 ➔ ${event.newCount}회 (+${event.increaseAmount})"
+        val title = context.getString(R.string.noti_download_title, event.repoFullName)
+        val message = context.getString(
+            R.string.noti_download_msg,
+            event.assetName,
+            event.previousCount,
+            event.newCount,
+            event.increaseAmount
+        )
+        val summary = context.getString(
+            R.string.noti_download_summary,
+            event.assetName,
+            event.increaseAmount,
+            event.newCount
+        )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(title)
-            .setContentText("'${event.assetName}' 다운로드 +${event.increaseAmount}회 (총 ${event.newCount}회)")
+            .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
@@ -139,13 +142,22 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = "🚀 [${event.repoFullName}] 신규 릴리즈 출시!"
-        val message = "버전: ${event.releaseTagName}\n제목: ${event.releaseName}"
+        val title = context.getString(R.string.noti_release_title, event.repoFullName)
+        val message = context.getString(
+            R.string.noti_release_msg,
+            event.releaseTagName,
+            event.releaseName
+        )
+        val summary = context.getString(
+            R.string.noti_release_summary,
+            event.releaseTagName,
+            event.releaseName
+        )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_NEW_RELEASE)
             .setSmallIcon(android.R.drawable.stat_notify_more)
             .setContentTitle(title)
-            .setContentText("${event.releaseTagName} - ${event.releaseName}")
+            .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
@@ -179,13 +191,18 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = "📢 GitHub Noti 앱 업데이트 가능 (v${info.latestVersion})"
-        val message = "새 버전(v${info.latestVersion})이 배포되었습니다.\n현재 버전: v${info.currentVersion}\n터치하여 새 버전을 다운로드하세요."
+        val title = context.getString(R.string.noti_app_update_title, info.latestVersion)
+        val message = context.getString(
+            R.string.noti_app_update_msg,
+            info.latestVersion,
+            info.currentVersion
+        )
+        val summary = context.getString(R.string.noti_app_update_summary, info.latestVersion)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_APP_UPDATE)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(title)
-            .setContentText("새 버전 v${info.latestVersion}으로 업데이트할 수 있습니다.")
+            .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)

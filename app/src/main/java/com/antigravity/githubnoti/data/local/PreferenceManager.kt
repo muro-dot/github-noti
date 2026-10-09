@@ -23,9 +23,17 @@ class PreferenceManager(context: Context) {
         private const val KEY_TRACKED_REPOS = "tracked_repos"
         private const val KEY_MONITOR_INTERVAL_MINUTES = "monitor_interval_minutes"
         private const val KEY_AUTO_UPDATE_CHECK = "auto_update_check"
+        private const val KEY_APP_LANGUAGE = "app_language"
         private const val PREFIX_DOWNLOAD_COUNT = "asset_dl_"
         private const val PREFIX_LATEST_RELEASE_ID = "latest_rel_id_"
     }
+
+    /**
+     * 앱 언어 수동 선택 설정 ("system", "ko", "en", 기본값: "system")
+     */
+    var appLanguage: String
+        get() = prefs.getString(KEY_APP_LANGUAGE, "system") ?: "system"
+        set(value) = prefs.edit().putString(KEY_APP_LANGUAGE, value).apply()
 
     /**
      * 조회할 깃허브 계정 아이디 (기본값: "octocat" 또는 사용자 지정)

@@ -1,3 +1,104 @@
 <resources>
     <string name="app_name">GitHub Noti</string>
+    <string name="app_title">GitHub Notification Manager</string>
+    <string name="user_public_repos">Public repositories of @%1$s</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="summary_public_repos">Public Repos</string>
+    <string name="summary_tracked_repos">Tracking</string>
+    <string name="summary_total_downloads">Total Downloads</string>
+    <string name="count_unit_repos">%1$d</string>
+    <string name="count_unit_downloads">%1$d</string>
+
+    <string name="sort_download_desc">Most Downloads</string>
+    <string name="sort_stars_desc">Most Stars</string>
+    <string name="sort_updated_desc">Recently Updated</string>
+    <string name="sort_name_asc">Name (A-Z)</string>
+
+    <string name="loading_repos">Loading GitHub repositories and release downloads…</string>
+    <string name="error_occurred">An error occurred.</string>
+    <string name="btn_open_settings">Open Account Settings</string>
+    <string name="empty_user_title">Please set up a GitHub account to monitor</string>
+    <string name="empty_user_desc">Enter a GitHub username in Settings to automatically track public repositories and release download stats.</string>
+    <string name="btn_setup_user">Set Up GitHub Account</string>
+    <string name="empty_repos">No public repositories found.</string>
+
+    <string name="action_ok">OK</string>
+    <string name="action_later">Later</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+
+    <string name="dialog_settings_title">Settings</string>
+    <string name="settings_username_label">GitHub Username / Org</string>
+    <string name="settings_interval_section">Background Check Interval</string>
+    <string name="interval_15m">15 min (Recommended min)</string>
+    <string name="interval_30m">30 min</string>
+    <string name="interval_1h">1 hour</string>
+    <string name="interval_3h">3 hours</string>
+    <string name="settings_app_update_section">App Version (Current v%1$s)</string>
+    <string name="settings_auto_update_label">Check for updates on launch</string>
+    <string name="settings_btn_check_update">Check for Updates Now</string>
+    <string name="settings_checking_update">Checking for updates…</string>
+    <string name="settings_battery_notice">Due to Android battery optimization policies, actual background execution time may vary slightly.</string>
+
+    <string name="settings_language_section">Language</string>
+    <string name="language_system">System Default</string>
+    <string name="language_korean">한국어 (Korean)</string>
+    <string name="language_english">English</string>
+
+    <string name="repo_open_in_browser">Open repository in browser</string>
+    <string name="badge_downloads">Downloads</string>
+    <string name="tracking_on">Tracking On</string>
+    <string name="tracking_off">Tracking Off</string>
+    <string name="test_notification_btn">Test +1 Download Notification</string>
+    <string name="releases_collapse">Collapse Releases</string>
+    <string name="releases_expand">Releases (%1$d)</string>
+    <string name="no_releases">No releases found for this repository.</string>
+    <string name="view_on_web">View on Web</string>
+    <string name="no_release_assets">(No asset files - Source code archive only)</string>
+    <string name="asset_download_count">%1$d downloads</string>
+
+    <string name="permission_banner_title">Notification Permission Required</string>
+    <string name="permission_banner_desc">Please allow permission to receive notifications when release downloads increase.</string>
+    <string name="permission_allow_btn">Allow</string>
+
+    <string name="app_update_dialog_title">New Update Available</string>
+    <string name="app_update_dialog_msg">A new version of GitHub Noti (%1$s) has been released!</string>
+    <string name="app_update_version_diff">Current: v%1$s ➔ Latest: %2$s</string>
+    <string name="app_update_release_notes">Release Notes:</string>
+    <string name="app_update_btn_install">Update Now (Auto install)</string>
+
+    <string name="snackbar_download_increase">🎉 [%1$s] \'%2$s\' download +%3$d! (%4$d ➔ %5$d)</string>
+    <string name="snackbar_new_release">🚀 [%1$s] New release \'%2$s\' (%3$s) published!</string>
+    <string name="update_check_found">A new version (%1$s) is available!</string>
+    <string name="update_check_latest">You are using the latest version (v%1$s).</string>
+    <string name="update_check_failed">Update check failed: %1$s</string>
+    <string name="error_network">Network error</string>
+    <string name="error_load_repos">Failed to load repositories.</string>
+
+    <string name="installer_download_manager_error">Cannot start download manager.</string>
+    <string name="installer_download_title">GitHub Noti %1$s Update Download</string>
+    <string name="installer_download_desc">Installation will start automatically after download.</string>
+    <string name="installer_download_started">Starting download. The installation screen will open automatically when completed.</string>
+    <string name="installer_apk_not_found">Cannot find the APK file to install.</string>
+    <string name="installer_unknown_source_permission">Please grant \'Install unknown apps\' permission to install the app update.</string>
+    <string name="installer_launch_error">An error occurred while launching installer: %1$s</string>
+
+    <string name="channel_name_download">GitHub Release Downloads</string>
+    <string name="channel_desc_download">Notifies when release downloads increase for tracked repositories.</string>
+    <string name="channel_name_new_release">GitHub New Releases</string>
+    <string name="channel_desc_new_release">Notifies when a new release is published in tracked repositories.</string>
+    <string name="channel_name_app_update">GitHub Noti App Updates</string>
+    <string name="channel_desc_app_update">Notifies about new versions of GitHub Noti.</string>
+
+    <string name="noti_download_title">🎉 [%1$s] New download detected!</string>
+    <string name="noti_download_msg">\'%1$s\'\nDownloads: %2$d ➔ %3$d (+%4$d)</string>
+    <string name="noti_download_summary">\'%1$s\' download +%2$d (Total %3$d)</string>
+    <string name="noti_release_title">🚀 [%1$s] New release published!</string>
+    <string name="noti_release_msg">Version: %1$s\nTitle: %2$s</string>
+    <string name="noti_release_summary">%1$s - %2$s</string>
+    <string name="noti_app_update_title">📢 GitHub Noti Update Available (v%1$s)</string>
+    <string name="noti_app_update_msg">A new version (v%1$s) has been released.\nCurrent: v%2$s\nTap to download the new version.</string>
+    <string name="noti_app_update_summary">You can update to new version v%1$s.</string>
 </resources>

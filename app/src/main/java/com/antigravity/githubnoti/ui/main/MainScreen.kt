@@ -1,5 +1,6 @@
 package com.antigravity.githubnoti.ui.main
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -15,16 +16,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.antigravity.githubnoti.R
 import com.antigravity.githubnoti.ui.components.NotificationPermissionBanner
 import com.antigravity.githubnoti.ui.components.RepoCard
 import com.antigravity.githubnoti.ui.components.SettingsDialog
+import com.antigravity.githubnoti.util.LocaleHelper
 
 /**
  * 깃허브 공개 리포지토리 목록과 릴리즈 다운로드 현황을 확인하고,
@@ -39,13 +41,24 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
-    LaunchedEffect(uiState.recentIncreaseEvent) {
-        uiState.recentIncreaseEvent?.let { event ->
-            val message = "🎉 [${event.repoFullName}] '${event.assetName}' 다운로드 +${event.increaseAmount}회! (${event.previousCount}회 ➔ ${event.newCount}회)"
+    val okLabel = stringResource(R.string.action_ok)
+
+    val increaseEvent = uiState.recentIncreaseEvent
+    if (increaseEvent != null) {
+        val message = stringResource(
+            R.string.snackbar_download_increase,
+            increaseEvent.repoFullName,
+            increaseEvent.assetName,
+            increaseEvent.increaseAmount,
+            increaseEvent.previousCount,
+            increaseEvent.newCount
+        )
+        LaunchedEffect(increaseEvent) {
             val result = snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = "확인",
+                actionLabel = okLabel,
                 duration = SnackbarDuration.Long
             )
             if (result == SnackbarResult.ActionPerformed || result == SnackbarResult.Dismissed) {
@@ -54,12 +67,18 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(uiState.recentNewReleaseEvent) {
-        uiState.recentNewReleaseEvent?.let { event ->
-            val message = "🚀 [${event.repoFullName}] 신규 릴리즈 '${event.releaseTagName}' (${event.releaseName}) 출시!"
+    val newReleaseEvent = uiState.recentNewReleaseEvent
+    if (newReleaseEvent != null) {
+        val message = stringResource(
+            R.string.snackbar_new_release,
+            newReleaseEvent.repoFullName,
+            newReleaseEvent.releaseTagName,
+            newReleaseEvent.releaseName
+        )
+        LaunchedEffect(newReleaseEvent) {
             val result = snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = "확인",
+                actionLabel = okLabel,
                 duration = SnackbarDuration.Long
             )
             if (result == SnackbarResult.ActionPerformed || result == SnackbarResult.Dismissed) {
@@ -76,13 +95,13 @@ fun MainScreen(
                 title = {
                     Column {
                         Text(
-                            text = "GitHub 알림 매니저",
+                            text = stringResource(R.string.app_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         if (uiState.username.isNotBlank()) {
                             Text(
-                                text = "@${uiState.username} 의 공개 리포지토리",
+                                text = stringResource(R.string.user_public_repos, uiState.username),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -101,13 +120,13 @@ fun MainScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Icon(Icons.Default.Refresh, contentDescription = "새로고침")
+                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.action_refresh))
                         }
                     }
 
-                    // 설정 (사용자명, 토큰, 모니터링 주기)
+                    // 설정 (사용자명, 토큰, 모니터링 주기, 언어)
                     IconButton(onClick = { viewModel.openSettings() }) {
-                        Icon(Icons.Default.Settings, contentDescription = "설정")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -149,7 +168,7 @@ fun MainScreen(
                     FilterChip(
                         selected = uiState.sortType == sort,
                         onClick = { viewModel.onSortTypeChange(sort) },
-                        label = { Text(sort.displayName) },
+                        label = { Text(stringResource(sort.titleRes)) },
                         leadingIcon = if (uiState.sortType == sort) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null
@@ -170,7 +189,7 @@ fun MainScreen(
                             CircularProgressIndicator()
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "GitHub 리포지토리 및 릴리즈 다운로드 정보를 불러오는 중...",
+                                text = stringResource(R.string.loading_repos),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -195,13 +214,13 @@ fun MainScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = uiState.errorMessage ?: "오류가 발생했습니다.",
+                                text = uiState.errorMessage ?: stringResource(R.string.error_occurred),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
                             Button(onClick = { viewModel.openSettings() }) {
-                                Text("계정 및 토큰 설정 열기")
+                                Text(stringResource(R.string.btn_open_settings))
                             }
                         }
                     }
@@ -224,13 +243,13 @@ fun MainScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "모니터링할 GitHub 계정을 설정해주세요",
+                                text = stringResource(R.string.empty_user_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "설정 버튼을 눌러 GitHub 아이디를 입력하시면\n공개 저장소와 릴리즈 다운로드 통계를 자동으로 추적합니다.",
+                                text = stringResource(R.string.empty_user_desc),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -238,7 +257,7 @@ fun MainScreen(
                             Button(onClick = { viewModel.openSettings() }) {
                                 Icon(Icons.Default.Settings, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("GitHub 계정 설정하기")
+                                Text(stringResource(R.string.btn_setup_user))
                             }
                         }
                     }
@@ -250,7 +269,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "공개 리포지토리가 없습니다.",
+                            text = stringResource(R.string.empty_repos),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -279,20 +298,23 @@ fun MainScreen(
         }
     }
 
-    val context = LocalContext.current
-
     // 설정 대화상자
     if (uiState.isSettingsOpen) {
         SettingsDialog(
             currentUsername = uiState.username,
             currentInterval = uiState.monitorInterval,
+            currentLanguage = uiState.appLanguage,
             isAutoUpdateEnabled = uiState.isAutoUpdateCheckEnabled,
             isCheckingUpdate = uiState.isCheckingAppUpdate,
             updateStatusMessage = uiState.updateCheckMessage,
             onDismiss = { viewModel.closeSettings() },
             onCheckUpdateNow = { viewModel.checkAppUpdate(isManual = true) },
-            onSave = { user, interval, autoUpdate ->
-                viewModel.saveSettings(user, interval, autoUpdate)
+            onSave = { user, interval, autoUpdate, language ->
+                val languageChanged = uiState.appLanguage != language
+                viewModel.saveSettings(user, interval, autoUpdate, language)
+                if (languageChanged && context is Activity) {
+                    LocaleHelper.setAppLanguage(context, language)
+                }
             }
         )
     }
@@ -311,7 +333,7 @@ fun MainScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "새로운 업데이트 알림",
+                        text = stringResource(R.string.app_update_dialog_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -320,13 +342,13 @@ fun MainScreen(
             text = {
                 Column {
                     Text(
-                        text = "GitHub Noti의 새로운 버전(${updateInfo.latestVersion})이 배포되었습니다!",
+                        text = stringResource(R.string.app_update_dialog_msg, updateInfo.latestVersion),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "현재 버전: v${updateInfo.currentVersion} ➔ 최신 버전: ${updateInfo.latestVersion}",
+                        text = stringResource(R.string.app_update_version_diff, updateInfo.currentVersion, updateInfo.latestVersion),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -334,7 +356,7 @@ fun MainScreen(
                     if (!updateInfo.releaseNotes.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "릴리즈 변경 사항:",
+                            text = stringResource(R.string.app_update_release_notes),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -367,12 +389,12 @@ fun MainScreen(
                         viewModel.dismissAppUpdateInfo()
                     }
                 ) {
-                    Text("지금 업데이트 (다운로드 후 자동 설치)")
+                    Text(stringResource(R.string.app_update_btn_install))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissAppUpdateInfo() }) {
-                    Text("나중에 하기")
+                    Text(stringResource(R.string.action_later))
                 }
             }
         )
@@ -403,20 +425,20 @@ private fun SummaryDashboardCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             SummaryItem(
-                label = "공개 저장소",
-                value = "${totalRepos}개",
+                label = stringResource(R.string.summary_public_repos),
+                value = stringResource(R.string.count_unit_repos, totalRepos),
                 icon = Icons.Default.FolderOpen
             )
             VerticalDivider(modifier = Modifier.height(30.dp), color = MaterialTheme.colorScheme.outlineVariant)
             SummaryItem(
-                label = "알림 추적 중",
-                value = "${trackedRepos}개",
+                label = stringResource(R.string.summary_tracked_repos),
+                value = stringResource(R.string.count_unit_repos, trackedRepos),
                 icon = Icons.Default.NotificationsActive
             )
             VerticalDivider(modifier = Modifier.height(30.dp), color = MaterialTheme.colorScheme.outlineVariant)
             SummaryItem(
-                label = "총 다운로드",
-                value = "${totalDownloads}회",
+                label = stringResource(R.string.summary_total_downloads),
+                value = stringResource(R.string.count_unit_downloads, totalDownloads),
                 icon = Icons.Default.Download
             )
         }

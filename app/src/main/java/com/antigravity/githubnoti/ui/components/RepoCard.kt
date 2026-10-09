@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,9 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.antigravity.githubnoti.R
 import com.antigravity.githubnoti.data.model.GithubRelease
 import com.antigravity.githubnoti.data.model.RepoItemUiState
 
@@ -89,7 +90,7 @@ fun RepoCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.OpenInBrowser,
-                        contentDescription = "브라우저에서 리포지토리 열기",
+                        contentDescription = stringResource(R.string.repo_open_in_browser),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -119,7 +120,7 @@ fun RepoCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
-                            contentDescription = "다운로드",
+                            contentDescription = stringResource(R.string.badge_downloads),
                             modifier = Modifier.size(15.dp),
                             tint = if (item.totalDownloadCount > 0)
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -128,7 +129,7 @@ fun RepoCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${item.totalDownloadCount}회",
+                            text = stringResource(R.string.count_unit_downloads, item.totalDownloadCount),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (item.totalDownloadCount > 0)
@@ -195,7 +196,7 @@ fun RepoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (item.isTracked) "알림 추적 중" else "알림 꺼짐",
+                        text = if (item.isTracked) stringResource(R.string.tracking_on) else stringResource(R.string.tracking_off),
                         style = MaterialTheme.typography.labelMedium,
                         color = if (item.isTracked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                     )
@@ -212,7 +213,7 @@ fun RepoCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "다운로드 +1 테스트 알림",
+                                contentDescription = stringResource(R.string.test_notification_btn),
                                 tint = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -225,7 +226,7 @@ fun RepoCard(
                         contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
                         Text(
-                            text = if (item.isExpanded) "릴리즈 닫기" else "릴리즈 (${item.releases.size})",
+                            text = if (item.isExpanded) stringResource(R.string.releases_collapse) else stringResource(R.string.releases_expand, item.releases.size),
                             style = MaterialTheme.typography.labelMedium
                         )
                         Icon(
@@ -255,7 +256,7 @@ fun RepoCard(
                         }
                     } else if (item.releases.isEmpty()) {
                         Text(
-                            text = "등록된 릴리즈(Release)가 없는 리포지토리입니다.",
+                            text = stringResource(R.string.no_releases),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -334,7 +335,7 @@ private fun ReleaseDetailItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "웹에서 보기",
+                        text = stringResource(R.string.view_on_web),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium
                     )
@@ -345,7 +346,7 @@ private fun ReleaseDetailItem(
             if (release.assets.isEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "(첨부된 파일 없음 - 소스코드 압축본만 제공)",
+                    text = stringResource(R.string.no_release_assets),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -384,7 +385,7 @@ private fun ReleaseDetailItem(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         ) {
                             Text(
-                                text = "다운로드 ${asset.downloadCount}회",
+                                text = stringResource(R.string.asset_download_count, asset.downloadCount),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary,

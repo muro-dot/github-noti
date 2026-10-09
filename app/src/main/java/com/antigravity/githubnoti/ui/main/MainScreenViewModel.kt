@@ -1,9 +1,11 @@
 package com.antigravity.githubnoti.ui.main
 
 import android.app.Application
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.antigravity.githubnoti.BuildConfig
+import com.antigravity.githubnoti.R
 import com.antigravity.githubnoti.data.api.GithubApiClient
 import com.antigravity.githubnoti.data.local.PreferenceManager
 import com.antigravity.githubnoti.data.model.AppUpdateInfo
@@ -22,13 +24,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * 리포지토리 목록 정렬 방식 열거형
+ * 리포지토리 목록 정렬 방식 열거형 (다국어 리소스 ID 참조)
  */
-enum class SortType(val displayName: String) {
-    DOWNLOAD_DESC("다운로드 많은 순"),
-    STARS_DESC("스타 많은 순"),
-    UPDATED_DESC("최근 수정 순"),
-    NAME_ASC("이름 가나다순")
+enum class SortType(@param:StringRes val titleRes: Int) {
+    DOWNLOAD_DESC(R.string.sort_download_desc),
+    STARS_DESC(R.string.sort_stars_desc),
+    UPDATED_DESC(R.string.sort_updated_desc),
+    NAME_ASC(R.string.sort_name_asc)
 }
 
 /**
@@ -37,6 +39,7 @@ enum class SortType(val displayName: String) {
 data class MainUiState(
     val username: String = "",
     val monitorInterval: Long = 15L,
+    val appLanguage: String = "system",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val searchQuery: String = "",
@@ -90,6 +93,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         MainUiState(
             username = preferenceManager.username,
             monitorInterval = preferenceManager.monitorIntervalMinutes,
+            appLanguage = preferenceManager.appLanguage,
             isAutoUpdateCheckEnabled = preferenceManager.isAutoUpdateCheckEnabled
         )
     )
@@ -207,10 +211,11 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     }
                 },
                 onFailure = { error ->
+                    val app = getApplication<Application>()
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.localizedMessage ?: "리포지토리를 불러오지 못했습니다."
+                            errorMessage = error.localizedMessage ?: app.getString(R.string.error_load_repos)
                         )
                     }
                 }
@@ -331,6 +336,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                 repoFullName = "muro-dot/github-noti"
             )
 
+            val app = getApplication<Application>()
             result.fold(
                 onSuccess = { release ->
                     val currentVersion = BuildConfig.VERSION_NAME
@@ -350,14 +356,14 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                             it.copy(
                                 appUpdateInfo = updateInfo,
                                 isCheckingAppUpdate = false,
-                                updateCheckMessage = if (isManual) "새 버전(${release.tagName})이 출시되었습니다!" else null
+                                updateCheckMessage = if (isManual) app.getString(R.string.update_check_found, release.tagName) else null
                             )
                         }
                     } else {
                         _uiState.update {
                             it.copy(
                                 isCheckingAppUpdate = false,
-                                updateCheckMessage = if (isManual) "현재 최신 버전(v$currentVersion)을 사용 중입니다." else null
+                                updateCheckMessage = if (isManual) app.getString(R.string.update_check_latest, currentVersion) else null
                             )
                         }
                     }
@@ -366,7 +372,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     _uiState.update {
                         it.copy(
                             isCheckingAppUpdate = false,
-                            updateCheckMessage = if (isManual) "업데이트 확인 실패: ${error.localizedMessage ?: "네트워크 오류"}" else null
+                            updateCheckMessage = if (isManual) app.getString(R.string.update_check_failed, error.localizedMessage ?: app.getString(R.string.error_network)) else null
                         )
                     }
                 }
@@ -380,18 +386,21 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
     fun saveSettings(
         username: String,
         intervalMinutes: Long,
-        autoUpdateCheck: Boolean = true
+        autoUpdateCheck: Boolean = true,
+        language: String = preferenceManager.appLanguage
     ) {
         val userChanged = preferenceManager.username != username
         preferenceManager.username = username
         preferenceManager.monitorIntervalMinutes = intervalMinutes
         preferenceManager.isAutoUpdateCheckEnabled = autoUpdateCheck
+        preferenceManager.appLanguage = language
 
         _uiState.update {
             it.copy(
                 username = username,
                 monitorInterval = intervalMinutes,
                 isAutoUpdateCheckEnabled = autoUpdateCheck,
+                appLanguage = language,
                 isSettingsOpen = false
             )
         }

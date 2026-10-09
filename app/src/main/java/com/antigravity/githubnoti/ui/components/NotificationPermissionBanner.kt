@@ -14,8 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.antigravity.githubnoti.R
 
 /**
  * Android 13(API 33) 이상에서 알림 권한이 허용되지 않았을 때
@@ -75,12 +77,12 @@ fun NotificationPermissionBanner(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "알림 권한이 필요합니다",
+                            text = stringResource(R.string.permission_banner_title),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                         Text(
-                            text = "릴리즈 다운로드가 증가했을 때 알림을 받으려면 권한을 허용해주세요.",
+                            text = stringResource(R.string.permission_banner_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -94,7 +96,7 @@ fun NotificationPermissionBanner(
                     ),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("허용", color = MaterialTheme.colorScheme.onError)
+                    Text(stringResource(R.string.permission_allow_btn), color = MaterialTheme.colorScheme.onError)
                 }
             }
         }
