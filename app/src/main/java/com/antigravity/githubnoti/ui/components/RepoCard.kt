@@ -43,7 +43,7 @@ fun RepoCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
@@ -53,7 +53,7 @@ fun RepoCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             // 상단 행: 리포지토리 이름 및 브라우저 열기 버튼
             Row(
@@ -84,17 +84,19 @@ fun RepoCard(
 
                 // 기본 브라우저 열기 버튼
                 IconButton(
-                    onClick = { openUrlInBrowser(context, item.repo.htmlUrl) }
+                    onClick = { openUrlInBrowser(context, item.repo.htmlUrl) },
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.OpenInBrowser,
                         contentDescription = "브라우저에서 리포지토리 열기",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             // 주요 메트릭 뱃지 (스타 수, 포크 수, 총 다운로드 수, 주요 언어)
             Row(
@@ -112,13 +114,13 @@ fun RepoCard(
                     border = CardDefaults.outlinedCardBorder()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "다운로드",
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(15.dp),
                             tint = if (item.totalDownloadCount > 0)
                                 MaterialTheme.colorScheme.onPrimaryContainer
                             else
@@ -172,9 +174,9 @@ fun RepoCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(7.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             // 하단 컨트롤 행: 추적 토글 스위치 & 릴리즈 상세 펼치기 버튼
             Row(
