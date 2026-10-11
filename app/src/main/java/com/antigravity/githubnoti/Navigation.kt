@@ -8,10 +8,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.antigravity.githubnoti.ui.main.MainScreen
+import com.antigravity.githubnoti.ui.main.MainScreenViewModel
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(viewModel: MainScreenViewModel = viewModel()) {
   val backStack = rememberNavBackStack(Main)
 
   NavDisplay(
@@ -20,7 +22,7 @@ fun MainNavigation() {
     entryProvider =
       entryProvider {
         entry<Main> {
-          MainScreen()
+          MainScreen(viewModel = viewModel)
         }
       },
   )

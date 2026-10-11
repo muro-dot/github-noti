@@ -23,7 +23,9 @@ class ReleaseNotificationWorker(
     private val notificationHelper = NotificationHelper(appContext)
 
     override suspend fun doWork(): Result {
+        // 대소문자 차이로 인한 중복 순회를 원천 차단
         val trackedRepos = preferenceManager.trackedRepos
+            .distinctBy { it.lowercase() }
 
         // 추적할 리포지토리가 설정되어 있지 않으면 조용히 성공 처리
         if (trackedRepos.isEmpty()) {

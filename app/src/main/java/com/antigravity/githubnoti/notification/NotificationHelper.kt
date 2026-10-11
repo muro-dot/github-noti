@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.antigravity.githubnoti.MainActivity
 import com.antigravity.githubnoti.R
 import com.antigravity.githubnoti.data.model.AppUpdateInfo
 import com.antigravity.githubnoti.data.model.DownloadIncreaseEvent
@@ -78,15 +79,18 @@ class NotificationHelper(private val context: Context) {
      * @param event 다운로드가 증가한 에셋 및 저장소 정보
      */
     fun showDownloadIncreaseNotification(event: DownloadIncreaseEvent) {
-        // 알림 클릭 시 기본 브라우저로 이동하는 인텐트 설정
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(event.releaseUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // 알림 클릭 시 GitHub Noti 앱으로 이동 및 새로고침 트리거 인텐트
+        val appIntent = Intent(context, MainActivity::class.java).apply {
+            action = MainActivity.ACTION_NOTIFICATION_CLICK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(MainActivity.EXTRA_REFRESH, true)
+            putExtra(MainActivity.EXTRA_REPO_NAME, event.repoFullName)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             context,
             event.hashCode(),
-            browserIntent,
+            appIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -118,7 +122,7 @@ class NotificationHelper(private val context: Context) {
         try {
             val notificationManager = NotificationManagerCompat.from(context)
             if (notificationManager.areNotificationsEnabled()) {
-                val notificationId = (event.repoFullName + event.assetName).hashCode()
+                val notificationId = (event.repoFullName.lowercase() + event.assetName).hashCode()
                 notificationManager.notify(notificationId, notification)
             }
         } catch (e: SecurityException) {
@@ -131,14 +135,17 @@ class NotificationHelper(private val context: Context) {
      * 추적 중인 리포지토리에 새 릴리즈가 등록되었을 때 알림을 표시합니다.
      */
     fun showNewReleaseNotification(event: NewReleaseEvent) {
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(event.releaseUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        val appIntent = Intent(context, MainActivity::class.java).apply {
+            action = MainActivity.ACTION_NOTIFICATION_CLICK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(MainActivity.EXTRA_REFRESH, true)
+            putExtra(MainActivity.EXTRA_REPO_NAME, event.repoFullName)
         }
 
         val pendingIntent = PendingIntent.getActivity(
             context,
             event.hashCode(),
-            browserIntent,
+            appIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
