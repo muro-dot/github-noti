@@ -43,5 +43,14 @@
 ## 3. 검증 결과
 - **Gradle Release 빌드**: `assembleRelease` 정상 완료 (Exit Code 0).
 - **APK 생성**: `app/build/outputs/apk/release/github-noti_v1.1.5.apk` (13,224,436 bytes).
-- **네트워크 공유 배포**: `\\192.168.0.250\web\github-noti\github-noti_v1.1.5.apk` 및 `github-noti-app.apk`에 최신 파일 복사 완료.
-- **GitHub Release 게시**: 사용자 지침에 따라 릴리즈 게시는 생략함.
+---
+
+## 4. v1.1.6 버전업 및 릴리즈 게시 작업
+- **버전 변경**: `app/build.gradle.kts`
+  - `versionCode = 8`
+  - `versionName = "1.1.6"`
+- **빌드 검증**: `assembleRelease`
+- **로컬 및 네트워크 배포**: `\\192.168.0.250\web\github-noti` 최신 v1.1.6 APK 복사
+- **GitHub 릴리즈 발행**: `gh release create v1.1.6` (태그 생성, APK 에셋 첨부, 간결한 릴리즈 노트 포함)
+- **완료 알림**: 딩동 사운드 재생
+

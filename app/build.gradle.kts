@@ -11,8 +11,8 @@ android {
         applicationId = "com.antigravity.githubnoti"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.1.5"
+        versionCode = 8
+        versionName = "1.1.6"
     }
 
     buildTypes {
