@@ -52,9 +52,57 @@ class PreferenceManager(context: Context) {
     /**
      * 알림 추적 대상 리포지토리 전체 이름(full_name, e.g. "user/repo") 집합.
      */
+    /**
+     * 알림 추적 대상 리포지토리 전체 이름(full_name, e.g. "user/repo") 집합.
+     * 대소문자 중복(예: muro-dot/LYWSD02... 와 muro-dot/lywsd02...)을 방지하기 위해 정규화합니다.
+     */
     var trackedRepos: Set<String>
-        get() = prefs.getStringSet(KEY_TRACKED_REPOS, emptySet()) ?: emptySet()
-        set(value) = prefs.edit().putStringSet(KEY_TRACKED_REPOS, value).apply()
+        get() {
+            val raw = prefs.getStringSet(KEY_TRACKED_REPOS, emptySet()) ?: emptySet()
+            // 대소문자 무시하고 유일한 레포지토리만 추출 (최신 형태 유지)
+            val distinctMap = mutableMapOf<String, String>()
+            for (repo in raw) {
+                val lower = repo.lowercase()
+                if (!distinctMap.containsKey(lower)) {
+                    distinctMap[lower] = repo
+                }
+            }
+            return distinctMap.values.toSet()
+        }
+        set(value) {
+            val distinctMap = mutableMapOf<String, String>()
+            for (repo in value) {
+                val lower = repo.lowercase()
+                if (!distinctMap.containsKey(lower)) {
+                    distinctMap[lower] = repo
+                }
+            }
+            prefs.edit().putStringSet(KEY_TRACKED_REPOS, distinctMap.values.toSet()).apply()
+        }
+
+    /**
+     * GitHub에서 받아온 최신 활성 리포지토리 목록을 기준으로 trackedRepos를 정규화합니다.
+     * - 이름 대소문자가 변경된 경우 현재 실제 이름으로 교체
+     * - GitHub에서 삭제되었거나 사용자의 리포지토리가 아닌 과거 잔여 데이터는 자동 정리
+     */
+    fun cleanUpTrackedRepos(activeRepos: List<com.antigravity.githubnoti.data.model.GithubRepo>) {
+        if (activeRepos.isEmpty()) return
+        val current = trackedRepos
+        val activeMap = activeRepos.associateBy { it.fullName.lowercase() }
+
+        val cleanedSet = mutableSetOf<String>()
+        for (savedRepo in current) {
+            val matched = activeMap[savedRepo.lowercase()]
+            if (matched != null) {
+                // 현재 GitHub 상의 정식 이름(대소문자 일치)으로 등록
+                cleanedSet.add(matched.fullName)
+            }
+        }
+        // 만약 기존 trackedRepos와 달라졌다면 업데이트
+        if (cleanedSet != current) {
+            trackedRepos = cleanedSet
+        }
+    }
 
     /**
      * 앱 시작 시 및 백그라운드에서 신규 릴리즈 업데이트 자동 확인 활성화 여부 (기본값: true)
@@ -64,14 +112,12 @@ class PreferenceManager(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_AUTO_UPDATE_CHECK, value).apply()
 
     /**
-     * 특정 리포지토리의 추적 여부를 토글합니다.
+     * 특정 리포지토리의 추적 여부를 토글합니다. 대소문자 무시하여 기존 항목을 찾고 갱신합니다.
      */
     fun setRepoTracked(repoFullName: String, isTracked: Boolean) {
-        val current = trackedRepos.toMutableSet()
+        val current = trackedRepos.filterNot { it.equals(repoFullName, ignoreCase = true) }.toMutableSet()
         if (isTracked) {
             current.add(repoFullName)
-        } else {
-            current.remove(repoFullName)
         }
         trackedRepos = current
     }
@@ -81,7 +127,17 @@ class PreferenceManager(context: Context) {
      */
     fun getPreviousDownloadCount(repoFullName: String, assetId: Long): Long {
         val key = makeAssetKey(repoFullName, assetId)
-        return prefs.getLong(key, -1L)
+        val value = prefs.getLong(key, -1L)
+        if (value != -1L) return value
+
+        // 하위 호환성: 대소문자 변경 전 예전 키 검색 및 마이그레이션
+        val legacyKey = "$PREFIX_DOWNLOAD_COUNT${repoFullName}_$assetId"
+        val legacyVal = prefs.getLong(legacyKey, -1L)
+        if (legacyVal != -1L) {
+            prefs.edit().putLong(key, legacyVal).apply()
+            return legacyVal
+        }
+        return -1L
     }
 
     /**
@@ -153,16 +209,20 @@ class PreferenceManager(context: Context) {
         isInitialLoad: Boolean = false
     ): NewReleaseEvent? {
         val latestRelease = releases.firstOrNull() ?: return null
-        val key = "$PREFIX_LATEST_RELEASE_ID$repoFullName"
-        val prevReleaseId = prefs.getLong(key, -1L)
+        val normalizedKey = "$PREFIX_LATEST_RELEASE_ID${repoFullName.lowercase()}"
+        val legacyKey = "$PREFIX_LATEST_RELEASE_ID$repoFullName"
+        var prevReleaseId = prefs.getLong(normalizedKey, -1L)
+        if (prevReleaseId == -1L && legacyKey != normalizedKey) {
+            prevReleaseId = prefs.getLong(legacyKey, -1L)
+        }
 
         return if (prevReleaseId == -1L) {
             // 최초 기록: 현재 최신 릴리즈 ID만 저장하고 알림은 생략
-            prefs.edit().putLong(key, latestRelease.id).apply()
+            prefs.edit().putLong(normalizedKey, latestRelease.id).apply()
             null
         } else if (latestRelease.id != prevReleaseId) {
             // 새 릴리즈 ID가 감지됨!
-            prefs.edit().putLong(key, latestRelease.id).apply()
+            prefs.edit().putLong(normalizedKey, latestRelease.id).apply()
             if (!isInitialLoad) {
                 NewReleaseEvent(
                     repoFullName = repoFullName,
@@ -204,6 +264,6 @@ class PreferenceManager(context: Context) {
     }
 
     private fun makeAssetKey(repoFullName: String, assetId: Long): String {
-        return "$PREFIX_DOWNLOAD_COUNT${repoFullName}_$assetId"
+        return "$PREFIX_DOWNLOAD_COUNT${repoFullName.lowercase()}_$assetId"
     }
 }

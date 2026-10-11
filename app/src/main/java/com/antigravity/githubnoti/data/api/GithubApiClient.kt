@@ -53,6 +53,7 @@ class GithubApiClient {
             .url(url)
             .header("Accept", "application/vnd.github.v3+json")
             .header("User-Agent", "GitHub-Noti-Android-App")
+            .header("Cache-Control", "no-cache")
 
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->
@@ -96,6 +97,7 @@ class GithubApiClient {
             .url(url)
             .header("Accept", "application/vnd.github.v3+json")
             .header("User-Agent", "GitHub-Noti-Android-App")
+            .header("Cache-Control", "no-cache")
 
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->
@@ -138,6 +140,7 @@ class GithubApiClient {
             .url(url)
             .header("Accept", "application/vnd.github.v3+json")
             .header("User-Agent", "GitHub-Noti-Android-App")
+            .header("Cache-Control", "no-cache")
 
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->

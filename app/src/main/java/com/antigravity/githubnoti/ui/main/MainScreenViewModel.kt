@@ -134,6 +134,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
 
             reposResult.fold(
                 onSuccess = { fetchedRepos ->
+                    // 과거에 이름이 변경되었거나 대소문자가 다른 리포지토리를 최신 정규 목록으로 정리
+                    preferenceManager.cleanUpTrackedRepos(fetchedRepos)
                     val trackedSet = preferenceManager.trackedRepos
                     val isFirstRunForUser = preferenceManager.username != targetUser
 
@@ -141,7 +143,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     val initialItems = fetchedRepos.map { repo ->
                         RepoItemUiState(
                             repo = repo,
-                            isTracked = if (isFirstRunForUser) true else (repo.fullName in trackedSet),
+                            isTracked = if (isFirstRunForUser) true else trackedSet.any { it.equals(repo.fullName, ignoreCase = true) },
                             isLoadingReleases = true
                         )
                     }
@@ -159,19 +161,16 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                         async {
                             val releasesResult = apiClient.fetchRepositoryReleases(repo.fullName)
 
-                            val releases = releasesResult.getOrDefault(emptyList())
-                            val totalDownloads = releases.sumOf { release ->
-                                release.assets.sumOf { it.downloadCount }
-                            }
+                            val rawReleases = releasesResult.getOrDefault(emptyList())
 
                             // 1. 신규 릴리즈 출시 감지
                             val newReleaseEvent = preferenceManager.checkAndRecordNewReleases(
                                 repoFullName = repo.fullName,
-                                releases = releases,
+                                releases = rawReleases,
                                 isInitialLoad = false
                             )
 
-                            val isTracked = repo.fullName in preferenceManager.trackedRepos
+                            val isTracked = trackedSet.any { it.equals(repo.fullName, ignoreCase = true) }
                             if (isTracked && newReleaseEvent != null) {
                                 notificationHelper.showNewReleaseNotification(newReleaseEvent)
                                 _uiState.update { state -> state.copy(recentNewReleaseEvent = newReleaseEvent) }
@@ -180,9 +179,27 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                             // 2. 다운로드 수 증가 비교 및 기록
                             val increaseEvents = preferenceManager.checkAndRecordDownloadIncreases(
                                 repoFullName = repo.fullName,
-                                releases = releases,
+                                releases = rawReleases,
                                 isInitialLoad = false
                             )
+
+                            // 백그라운드 Worker나 Preference에 기록된 최신 다운로드 수치와 동기화 (화면 표시 정합성 보장)
+                            val releases = rawReleases.map { release ->
+                                release.copy(
+                                    assets = release.assets.map { asset ->
+                                        val recordedCount = preferenceManager.getPreviousDownloadCount(repo.fullName, asset.id)
+                                        if (recordedCount > asset.downloadCount) {
+                                            asset.copy(downloadCount = recordedCount)
+                                        } else {
+                                            asset
+                                        }
+                                    }
+                                )
+                            }
+
+                            val totalDownloads = releases.sumOf { release ->
+                                release.assets.sumOf { it.downloadCount }
+                            }
 
                             // 증가가 발생했고 추적 중인 리포지토리라면 푸시 알림 발송!
                             if (isTracked && increaseEvents.isNotEmpty()) {
@@ -196,7 +213,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                                 repo = repo,
                                 releases = releases,
                                 totalDownloadCount = totalDownloads,
-                                isTracked = repo.fullName in preferenceManager.trackedRepos,
+                                isTracked = isTracked,
                                 isLoadingReleases = false
                             )
                         }
@@ -228,7 +245,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
      */
     fun toggleRepoTracking(repoFullName: String) {
         val currentItems = _uiState.value.repos
-        val target = currentItems.find { it.repo.fullName == repoFullName } ?: return
+        val target = currentItems.find { it.repo.fullName.equals(repoFullName, ignoreCase = true) } ?: return
         val newTrackedState = !target.isTracked
 
         preferenceManager.setRepoTracked(repoFullName, newTrackedState)
@@ -236,7 +253,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { state ->
             state.copy(
                 repos = state.repos.map { item ->
-                    if (item.repo.fullName == repoFullName) {
+                    if (item.repo.fullName.equals(repoFullName, ignoreCase = true)) {
                         item.copy(isTracked = newTrackedState)
                     } else {
                         item
@@ -253,7 +270,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { state ->
             state.copy(
                 repos = state.repos.map { item ->
-                    if (item.repo.fullName == repoFullName) {
+                    if (item.repo.fullName.equals(repoFullName, ignoreCase = true)) {
                         item.copy(isExpanded = !item.isExpanded)
                     } else {
                         item
@@ -267,7 +284,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
      * 사용자가 UI에서 즉시 알림 작동 여부를 검증해볼 수 있는 '다운로드 수 +1 시뮬레이션' 기능입니다.
      */
     fun simulateDownloadIncrease(repoFullName: String) {
-        val item = _uiState.value.repos.find { it.repo.fullName == repoFullName } ?: return
+        val item = _uiState.value.repos.find { it.repo.fullName.equals(repoFullName, ignoreCase = true) } ?: return
         val firstRelease = item.releases.firstOrNull { it.assets.isNotEmpty() } ?: return
 
         val event = preferenceManager.simulateDownloadIncrease(repoFullName, firstRelease)
@@ -280,7 +297,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update { state ->
                 state.copy(
                     repos = state.repos.map { repoItem ->
-                        if (repoItem.repo.fullName == repoFullName) {
+                        if (repoItem.repo.fullName.equals(repoFullName, ignoreCase = true)) {
                             repoItem.copy(totalDownloadCount = repoItem.totalDownloadCount + 1)
                         } else {
                             repoItem
