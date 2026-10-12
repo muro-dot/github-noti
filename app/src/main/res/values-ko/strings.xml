@@ -31,6 +31,10 @@
 
     <string name="dialog_settings_title">모니터링 &amp; 계정 설정</string>
     <string name="settings_username_label">GitHub 사용자명/조직명</string>
+    <string name="settings_token_label">GitHub 토큰 (선택 사항)</string>
+    <string name="settings_token_desc">미입력 시 시간당 60회, 토큰 입력 시 시간당 5,000회까지 호출 가능합니다.</string>
+    <string name="settings_max_releases_label">표시할 최근 릴리즈 개수</string>
+    <string name="settings_max_releases_desc">릴리즈 펼침 시 최근 N개의 버전만 표시합니다.</string>
     <string name="settings_interval_section">백그라운드 확인 주기</string>
     <string name="interval_15m">15분 (권장 최소값)</string>
     <string name="interval_30m">30분</string>
@@ -43,7 +47,6 @@
     <string name="settings_auto_update_label">시작 시 신규 버전 자동 확인</string>
     <string name="settings_btn_check_update">지금 최신 릴리즈 확인</string>
     <string name="settings_checking_update">최신 릴리즈 확인 중…</string>
-    <string name="settings_battery_notice">안드로이드 OS 배터리 최적화 정책에 의해 실제 백그라운드 동작 시각은 약간의 오차가 있을 수 있습니다.</string>
 
     <string name="settings_language_section">언어 설정</string>
     <string name="language_system">시스템 기본값</string>
@@ -57,6 +60,7 @@
     <string name="test_notification_btn">다운로드 +1 테스트 알림</string>
     <string name="releases_collapse">릴리즈 닫기</string>
     <string name="releases_expand">릴리즈 (%1$d)</string>
+    <string name="releases_limited_notice">※ 최근 %1$d개 버전만 표시 중입니다 (전체 %2$d개)</string>
     <string name="no_releases">등록된 릴리즈(Release)가 없는 리포지토리입니다.</string>
     <string name="view_on_web">웹에서 보기</string>
     <string name="no_release_assets">(첨부된 파일 없음 - 소스코드 압축본만 제공)</string>

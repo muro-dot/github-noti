@@ -287,6 +287,7 @@ fun MainScreen(
                         ) { item ->
                             RepoCard(
                                 item = item,
+                                maxReleaseCount = uiState.maxReleaseCount,
                                 onToggleTrack = { viewModel.toggleRepoTracking(item.repo.fullName) },
                                 onToggleExpand = { viewModel.toggleRepoExpand(item.repo.fullName) },
                                 onSimulateTestIncrease = { viewModel.simulateDownloadIncrease(item.repo.fullName) }
@@ -302,6 +303,8 @@ fun MainScreen(
     if (uiState.isSettingsOpen) {
         SettingsDialog(
             currentUsername = uiState.username,
+            currentToken = uiState.token,
+            currentMaxReleaseCount = uiState.maxReleaseCount,
             currentInterval = uiState.monitorInterval,
             currentLanguage = uiState.appLanguage,
             isAutoUpdateEnabled = uiState.isAutoUpdateCheckEnabled,
@@ -309,9 +312,9 @@ fun MainScreen(
             updateStatusMessage = uiState.updateCheckMessage,
             onDismiss = { viewModel.closeSettings() },
             onCheckUpdateNow = { viewModel.checkAppUpdate(isManual = true) },
-            onSave = { user, interval, autoUpdate, language ->
+            onSave = { user, token, maxReleases, interval, autoUpdate, language ->
                 val languageChanged = uiState.appLanguage != language
-                viewModel.saveSettings(user, interval, autoUpdate, language)
+                viewModel.saveSettings(user, token, maxReleases, interval, autoUpdate, language)
                 if (languageChanged && context is Activity) {
                     LocaleHelper.setAppLanguage(context, language)
                 }

@@ -34,6 +34,7 @@ import com.antigravity.githubnoti.data.model.RepoItemUiState
 @Composable
 fun RepoCard(
     item: RepoItemUiState,
+    maxReleaseCount: Int = 5,
     onToggleTrack: (Boolean) -> Unit,
     onToggleExpand: () -> Unit,
     onSimulateTestIncrease: () -> Unit,
@@ -261,12 +262,23 @@ fun RepoCard(
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     } else {
-                        item.releases.forEach { release ->
+                        val displayReleases = item.releases.take(maxReleaseCount)
+                        displayReleases.forEach { release ->
                             ReleaseDetailItem(
                                 release = release,
                                 onOpenUrl = { url -> openUrlInBrowser(context, url) }
                             )
                             Spacer(modifier = Modifier.height(6.dp))
+                        }
+
+                        if (item.releases.size > maxReleaseCount) {
+                            Text(
+                                text = stringResource(R.string.releases_limited_notice, maxReleaseCount, item.releases.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier
+                                    .padding(vertical = 4.dp, horizontal = 4.dp)
+                            )
                         }
                     }
                 }

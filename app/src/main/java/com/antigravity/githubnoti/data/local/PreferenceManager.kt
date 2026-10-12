@@ -20,6 +20,8 @@ class PreferenceManager(context: Context) {
     companion object {
         private const val PREF_NAME = "github_noti_prefs"
         private const val KEY_USERNAME = "github_username"
+        private const val KEY_TOKEN = "github_token"
+        private const val KEY_MAX_RELEASE_COUNT = "max_release_count"
         private const val KEY_TRACKED_REPOS = "tracked_repos"
         private const val KEY_MONITOR_INTERVAL_MINUTES = "monitor_interval_minutes"
         private const val KEY_AUTO_UPDATE_CHECK = "auto_update_check"
@@ -41,6 +43,21 @@ class PreferenceManager(context: Context) {
     var username: String
         get() = prefs.getString(KEY_USERNAME, "") ?: ""
         set(value) = prefs.edit().putString(KEY_USERNAME, value.trim()).apply()
+
+    /**
+     * 깃허브 개인 액세스 토큰 (선택 사항).
+     * GitHub API는 미인증 시 시간당 60회로 제한되므로 토큰 입력 시 시간당 5,000회까지 안전하게 이용 가능합니다.
+     */
+    var githubToken: String
+        get() = prefs.getString(KEY_TOKEN, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TOKEN, value.trim()).apply()
+
+    /**
+     * 리포지토리 카드 펼침 시 표시할 최근 릴리즈 최대 개수 (기본값: 5).
+     */
+    var maxReleaseCount: Int
+        get() = prefs.getInt(KEY_MAX_RELEASE_COUNT, 5)
+        set(value) = prefs.edit().putInt(KEY_MAX_RELEASE_COUNT, value.coerceAtLeast(1)).apply()
 
     /**
      * 백그라운드 모니터링 주기 (분 단위, WorkManager 최소값은 15분).
