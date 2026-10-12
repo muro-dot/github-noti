@@ -38,6 +38,8 @@ enum class SortType(@param:StringRes val titleRes: Int) {
  */
 data class MainUiState(
     val username: String = "",
+    val token: String = "",
+    val maxReleaseCount: Int = 5,
     val monitorInterval: Long = 15L,
     val appLanguage: String = "system",
     val isLoading: Boolean = false,
@@ -92,6 +94,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
     private val _uiState = MutableStateFlow(
         MainUiState(
             username = preferenceManager.username,
+            token = preferenceManager.githubToken,
+            maxReleaseCount = preferenceManager.maxReleaseCount,
             monitorInterval = preferenceManager.monitorIntervalMinutes,
             appLanguage = preferenceManager.appLanguage,
             isAutoUpdateCheckEnabled = preferenceManager.isAutoUpdateCheckEnabled
@@ -130,7 +134,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val reposResult = apiClient.fetchUserRepositories(targetUser)
+            val token = _uiState.value.token.ifBlank { null }
+            val reposResult = apiClient.fetchUserRepositories(targetUser, token)
 
             reposResult.fold(
                 onSuccess = { fetchedRepos ->
@@ -159,7 +164,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     // 2단계: 각 리포지토리의 릴리즈를 병렬로 가져와 총 다운로드 수 및 증가 감지
                     val updatedItems = fetchedRepos.map { repo ->
                         async {
-                            val releasesResult = apiClient.fetchRepositoryReleases(repo.fullName)
+                            val releasesResult = apiClient.fetchRepositoryReleases(repo.fullName, token)
 
                             val rawReleases = releasesResult.getOrDefault(emptyList())
 
@@ -350,7 +355,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update { it.copy(isCheckingAppUpdate = true, updateCheckMessage = null) }
 
             val result = apiClient.fetchLatestRelease(
-                repoFullName = "muro-dot/github-noti"
+                repoFullName = "muro-dot/github-noti",
+                token = _uiState.value.token.ifBlank { null }
             )
 
             val app = getApplication<Application>()
@@ -402,12 +408,17 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
      */
     fun saveSettings(
         username: String,
+        token: String,
+        maxReleaseCount: Int,
         intervalMinutes: Long,
         autoUpdateCheck: Boolean = true,
         language: String = preferenceManager.appLanguage
     ) {
         val userChanged = preferenceManager.username != username
+        val tokenChanged = preferenceManager.githubToken != token
         preferenceManager.username = username
+        preferenceManager.githubToken = token
+        preferenceManager.maxReleaseCount = maxReleaseCount
         preferenceManager.monitorIntervalMinutes = intervalMinutes
         preferenceManager.isAutoUpdateCheckEnabled = autoUpdateCheck
         preferenceManager.appLanguage = language
@@ -415,6 +426,8 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update {
             it.copy(
                 username = username,
+                token = token,
+                maxReleaseCount = maxReleaseCount,
                 monitorInterval = intervalMinutes,
                 isAutoUpdateCheckEnabled = autoUpdateCheck,
                 appLanguage = language,
@@ -425,7 +438,7 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
         // 새 주기로 백그라운드 워커 재스케줄링
         WorkScheduler.schedulePeriodicMonitoring(getApplication(), intervalMinutes)
 
-        if (userChanged || _uiState.value.repos.isEmpty()) {
+        if (userChanged || tokenChanged || _uiState.value.repos.isEmpty()) {
             fetchRepositories(username)
         }
     }

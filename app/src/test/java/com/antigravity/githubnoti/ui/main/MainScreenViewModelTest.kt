@@ -125,4 +125,29 @@ class MainScreenViewModelTest {
         assertEquals(1, release.assets.size)
         assertEquals(42L, release.assets[0].downloadCount)
     }
+
+    @Test
+    fun testMaxReleaseCountSlice() {
+        val releases = (1..10).map { i ->
+            GithubRelease(
+                id = i.toLong(),
+                tagName = "v1.0.$i",
+                name = "Release $i",
+                htmlUrl = "https://github.com/user/repo/releases/tag/v1.0.$i"
+            )
+        }
+
+        val state = MainUiState(
+            maxReleaseCount = 3,
+            token = "ghp_test123"
+        )
+
+        assertEquals(3, state.maxReleaseCount)
+        assertEquals("ghp_test123", state.token)
+
+        val sliced = releases.take(state.maxReleaseCount)
+        assertEquals("최대 N개(3개)만큼만 표시되어야 합니다.", 3, sliced.size)
+        assertEquals("v1.0.1", sliced[0].tagName)
+        assertEquals("v1.0.3", sliced[2].tagName)
+    }
 }

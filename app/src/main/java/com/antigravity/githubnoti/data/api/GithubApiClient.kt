@@ -37,10 +37,12 @@ class GithubApiClient {
      * 특정 깃허브 사용자의 공개(Public) 리포지토리 목록을 가져옵니다.
      *
      * @param username 깃허브 사용자 계정 또는 조직명
+     * @param token 개인 액세스 토큰 (선택 사항, Rate limit 확장용)
      * @return 성공 시 [GithubRepo] 리스트, 실패 시 발생한 예외 정보를 담은 [Result]
      */
     suspend fun fetchUserRepositories(
-        username: String
+        username: String,
+        token: String? = null
     ): Result<List<GithubRepo>> = withContext(Dispatchers.IO) {
         val cleanUser = username.trim()
         if (cleanUser.isEmpty()) {
@@ -55,6 +57,10 @@ class GithubApiClient {
             .header("User-Agent", "GitHub-Noti-Android-App")
             .header("Cache-Control", "no-cache")
 
+        if (!token.isNullOrBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${token.trim()}")
+        }
+
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->
                 when (response.code) {
@@ -66,7 +72,10 @@ class GithubApiClient {
                     }
                     403 -> {
                         Result.failure(
-                            IOException("GitHub API 호출 한도(Rate limit)를 초과했습니다. 잠시 후 다시 시도해주세요.")
+                            IOException(
+                                "GitHub API 호출 한도(Rate limit)를 초과했습니다. " +
+                                "설정에서 GitHub 개인 액세스 토큰(PAT)을 입력하시면 시간당 5,000회까지 이용할 수 있습니다."
+                            )
                         )
                     }
                     404 -> {
@@ -87,10 +96,12 @@ class GithubApiClient {
      * 각 릴리즈에는 바이너리 에셋 목록 및 다운로드 수가 포함되어 있습니다.
      *
      * @param repoFullName 리포지토리 전체 명칭 (예: "facebook/react", "user/repo")
+     * @param token 개인 액세스 토큰 (선택 사항)
      * @return 성공 시 [GithubRelease] 리스트
      */
     suspend fun fetchRepositoryReleases(
-        repoFullName: String
+        repoFullName: String,
+        token: String? = null
     ): Result<List<GithubRelease>> = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/repos/$repoFullName/releases?per_page=30"
         val requestBuilder = Request.Builder()
@@ -98,6 +109,10 @@ class GithubApiClient {
             .header("Accept", "application/vnd.github.v3+json")
             .header("User-Agent", "GitHub-Noti-Android-App")
             .header("Cache-Control", "no-cache")
+
+        if (!token.isNullOrBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${token.trim()}")
+        }
 
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->
@@ -112,7 +127,12 @@ class GithubApiClient {
                         Result.success(emptyList())
                     }
                     403 -> {
-                        Result.failure(IOException("API 호출 한도 초과: 릴리즈 정보를 가져올 수 없습니다."))
+                        Result.failure(
+                            IOException(
+                                "API 호출 한도 초과: 릴리즈 정보를 가져올 수 없습니다. " +
+                                "설정에서 개인 액세스 토큰을 등록해주세요."
+                            )
+                        )
                     }
                     else -> {
                         Result.failure(IOException("릴리즈 정보 요청 실패 (HTTP ${response.code})"))
@@ -129,10 +149,12 @@ class GithubApiClient {
      * 자체 앱 업데이트 확인 또는 신규 버전 확인 시 빠르게 단일 조회를 수행합니다.
      *
      * @param repoFullName 리포지토리 전체 명칭 (예: "muro-dot/github-noti")
+     * @param token 개인 액세스 토큰 (선택 사항)
      * @return 최신 [GithubRelease] 객체
      */
     suspend fun fetchLatestRelease(
-        repoFullName: String
+        repoFullName: String,
+        token: String? = null
     ): Result<GithubRelease> = withContext(Dispatchers.IO) {
         val cleanRepo = repoFullName.trim()
         val url = "$BASE_URL/repos/$cleanRepo/releases/latest"
@@ -141,6 +163,10 @@ class GithubApiClient {
             .header("Accept", "application/vnd.github.v3+json")
             .header("User-Agent", "GitHub-Noti-Android-App")
             .header("Cache-Control", "no-cache")
+
+        if (!token.isNullOrBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${token.trim()}")
+        }
 
         try {
             httpClient.newCall(requestBuilder.build()).execute().use { response ->

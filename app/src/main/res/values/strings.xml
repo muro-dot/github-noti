@@ -31,6 +31,10 @@
 
     <string name="dialog_settings_title">Settings</string>
     <string name="settings_username_label">GitHub Username / Org</string>
+    <string name="settings_token_label">GitHub Token (Optional)</string>
+    <string name="settings_token_desc">60 req/hr without token, 5,000 req/hr with token.</string>
+    <string name="settings_max_releases_label">Recent releases to show</string>
+    <string name="settings_max_releases_desc">Show recent N release versions when expanded.</string>
     <string name="settings_interval_section">Background Check Interval</string>
     <string name="interval_15m">15 min (Recommended min)</string>
     <string name="interval_30m">30 min</string>
@@ -43,7 +47,6 @@
     <string name="settings_auto_update_label">Check for updates on launch</string>
     <string name="settings_btn_check_update">Check for Updates Now</string>
     <string name="settings_checking_update">Checking for updates…</string>
-    <string name="settings_battery_notice">Due to Android battery optimization policies, actual background execution time may vary slightly.</string>
 
     <string name="settings_language_section">Language</string>
     <string name="language_system">System Default</string>
@@ -57,6 +60,7 @@
     <string name="test_notification_btn">Test +1 Download Notification</string>
     <string name="releases_collapse">Collapse Releases</string>
     <string name="releases_expand">Releases (%1$d)</string>
+    <string name="releases_limited_notice">※ Showing recent %1$d releases (Total %2$d)</string>
     <string name="no_releases">No releases found for this repository.</string>
     <string name="view_on_web">View on Web</string>
     <string name="no_release_assets">(No asset files - Source code archive only)</string>
