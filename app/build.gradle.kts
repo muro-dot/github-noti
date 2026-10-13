@@ -4,6 +4,9 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
 }
 
+// 릴리즈 서명 정보는 저장소에 넣지 않고 ~/.gradle/gradle.properties 에서 읽는다. (docs/RELEASE.md 참고)
+val hasReleaseSigning = project.hasProperty("GITHUBNOTI_KEYSTORE")
+
 android {
     namespace = "com.antigravity.githubnoti"
     compileSdk = 36
@@ -15,10 +18,24 @@ android {
         versionName = "1.1.8"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(project.property("GITHUBNOTI_KEYSTORE") as String)
+                storePassword = project.property("GITHUBNOTI_STORE_PASSWORD") as String
+                keyAlias = project.property("GITHUBNOTI_KEY_ALIAS") as String
+                keyPassword = project.property("GITHUBNOTI_KEY_PASSWORD") as String
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // 서명 키가 없는 환경에서는 서명 없이 두어, 디버그 키로 잘못 서명되는 일을 막는다
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -84,6 +101,15 @@ afterEvaluate {
     tasks.named("assembleDebug").configure {
         finalizedBy(renameDebugApk)
     }
+}
+
+// 릴리즈 빌드를 직접 요청했는데 서명 정보가 없으면 조용히 통과시키지 않고 중단한다. (docs/RELEASE.md 참고)
+// 'build' 같은 일반 작업은 영향받지 않도록 명시적으로 요청된 릴리즈 작업만 검사한다.
+val releaseTaskPattern = Regex("(^|:)(assemble|bundle|package|install)[A-Za-z]*Release$")
+if (gradle.startParameter.taskNames.any { releaseTaskPattern.containsMatchIn(it) }) {
+    if (!hasReleaseSigning) {
+        throw GradleException("릴리즈 서명 키(GITHUBNOTI_KEYSTORE 등)가 ~/.gradle/gradle.properties 에 없습니다. 릴리즈는 키 보관 PC에서만 빌드하세요. docs/RELEASE.md 참고")
+        }
 }
 
 kotlin {
