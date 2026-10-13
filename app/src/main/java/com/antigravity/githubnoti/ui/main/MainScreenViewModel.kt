@@ -144,21 +144,30 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     val trackedSet = preferenceManager.trackedRepos
                     val isFirstRunForUser = preferenceManager.username != targetUser
 
-                    // 1단계: 기본 리포지토리 리스트 생성
-                    val initialItems = fetchedRepos.map { repo ->
-                        RepoItemUiState(
-                            repo = repo,
-                            isTracked = if (isFirstRunForUser) true else trackedSet.any { it.equals(repo.fullName, ignoreCase = true) },
-                            isLoadingReleases = true
-                        )
-                    }
-
                     // 모든 리포지토리를 기본 추적 대상으로 저장 (첫 설정 시 편의 제공)
                     if (isFirstRunForUser) {
                         preferenceManager.trackedRepos = fetchedRepos.map { it.fullName }.toSet()
                     }
 
-                    _uiState.update { it.copy(repos = initialItems, username = targetUser) }
+                    // 1단계: 기존 목록이 있을 때만 화면을 갱신한다.
+                    // 이유: 다운로드 수 0인 임시 목록을 먼저 보여주면 정렬 순서가 순간 바뀌었다가
+                    // 2단계에서 다시 뒤바뀌어 화면이 깜빡이므로, 이전 값을 유지한 채 최종 결과만 한 번에 반영한다.
+                    // 첫 실행(목록 비어 있음)은 로딩 화면을 유지한다.
+                    val previousByName = _uiState.value.repos.associateBy { it.repo.fullName.lowercase() }
+                    if (previousByName.isNotEmpty()) {
+                        val carriedItems = fetchedRepos.map { repo ->
+                            val previous = previousByName[repo.fullName.lowercase()]
+                            previous?.copy(repo = repo)
+                                ?: RepoItemUiState(
+                                    repo = repo,
+                                    isTracked = if (isFirstRunForUser) true else trackedSet.any { it.equals(repo.fullName, ignoreCase = true) },
+                                    isLoadingReleases = true
+                                )
+                        }
+                        _uiState.update { it.copy(repos = carriedItems, username = targetUser) }
+                    } else {
+                        _uiState.update { it.copy(username = targetUser) }
+                    }
                     preferenceManager.username = targetUser
 
                     // 2단계: 각 리포지토리의 릴리즈를 병렬로 가져와 총 다운로드 수 및 증가 감지
@@ -225,8 +234,13 @@ class MainScreenViewModel(application: Application) : AndroidViewModel(applicati
                     }.awaitAll()
 
                     _uiState.update {
+                        // 로딩 중 사용자가 펼쳐 둔 카드 상태가 갱신으로 닫히지 않도록 유지
+                        val expandedNames = it.repos.filter { item -> item.isExpanded }
+                            .map { item -> item.repo.fullName.lowercase() }.toSet()
                         it.copy(
-                            repos = updatedItems,
+                            repos = updatedItems.map { item ->
+                                item.copy(isExpanded = item.repo.fullName.lowercase() in expandedNames)
+                            },
                             isLoading = false,
                             errorMessage = null
                         )
